@@ -1,6 +1,6 @@
 # Youscout 易双六 ようすこう
 
-<!-- Time-stamp: "2020-04-06T06:12:09Z" -->
+<!-- Time-stamp: "2020-04-06T08:28:34Z" -->
 
 A sort of solitaire games playing with tarot cards, inspired by
 arguments about Yi-Ching divination.
@@ -53,4 +53,4 @@ commercially.
 
 
 ---
-(This file is written in Japanese/UTF8.)
+(This document is mainly written in Japanese/UTF8.)
