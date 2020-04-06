@@ -1,0 +1,516 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Language" content="ja,en" />
+
+<title>易双六 大アルカナ数表 (×2) Youscout Table of Major Arcana</title>
+<style type="text/css">
+#table {
+  border: solid 2px black;
+  text-align: left;
+}
+span.trick {
+}
+tr.card_name {
+}
+tr.numbers {
+  border: 0;
+}
+td.title {
+  padding-top: 2px;
+  padding-left: 2px;
+  text-align: center;
+}
+td.card_name {
+  border-top: solid 1px black;
+  padding-top: 2px;
+  padding-left: 2px;
+  text-align: left;
+}
+td.sword {
+  text-align: center;
+}
+td.coin {
+  text-align: center;
+}
+td.cup {
+  text-align: center;
+}
+td.wand {
+  text-align: center;
+}
+td.border {
+  width: 1px;
+  border-left: solid 1px black;
+}
+
+table#rules {
+  border: solid 2px black;
+}
+td.upper_trigram {
+  padding-top: 2px;
+  text-align: center;
+}
+td.lower_trigram {
+  border-top: solid 2px black;
+  padding-top: 2px;
+  text-align: center;
+}
+td.formula {
+  border-top: solid 1px black;
+  padding-top: 2px;
+  padding-left: 2px;
+  padding-right: 2px;
+  text-align: left;
+}
+td.move {
+  padding-left: 2px;
+  text-align: left;
+}
+td.stay {
+  padding-left: 2px;
+  text-align: left;
+}
+</style>
+<body>
+<div id="table-div">
+<table id="table" align="center" cellspacing="0" cellpadding="0">
+<tr>
+<td class="title" colspan="4">正位置 Upright</td>
+<td class="border"> </td>
+<td class="title" colspan="4">逆位置 Reversed</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(0) 愚者 The Fool (使わない Not Use)<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(0 Inv.) 愚者 The Fool (使わない Not Use)</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠0/10</td>
+<td class="coin">♦10|10</td>
+<td class="cup">♥10∽10</td>
+<td class="wand">♣6∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽6</td>
+<td class="cup">♥10∽10</td>
+<td class="coin">♦10|10</td>
+<td class="sword">♠10/0</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(1) 魔術師 The Magician<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(1 Inv.) 魔術師 The Magician</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/6</td>
+<td class="coin">♦10|14</td>
+<td class="cup">♥0∽6</td>
+<td class="wand">♣14∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽14</td>
+<td class="cup">♥6∽0</td>
+<td class="coin">♦14|10</td>
+<td class="sword">♠6/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(2) 女教皇 The High Priestess<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(2 Inv.) 女教皇 The High Priestess</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠0/10</td>
+<td class="coin">♦14|6</td>
+<td class="cup">♥14∽10</td>
+<td class="wand">♣6∽6</td>
+<td class="border"> </td>
+<td class="wand">♣6∽6</td>
+<td class="cup">♥10∽14</td>
+<td class="coin">♦6|14</td>
+<td class="sword">♠10/0</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(3) 女帝 The Empress<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(3 Inv.) 女帝 The Empress</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/6</td>
+<td class="coin">♦0|6</td>
+<td class="cup">♥14∽10</td>
+<td class="wand">♣10∽14</td>
+<td class="border"> </td>
+<td class="wand">♣14∽10</td>
+<td class="cup">♥10∽14</td>
+<td class="coin">♦6|0</td>
+<td class="sword">♠6/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(4) 皇帝 The Emperor<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(4 Inv.) 皇帝 The Emperor</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/6</td>
+<td class="coin">♦0|6</td>
+<td class="cup">♥10∽14</td>
+<td class="wand">♣14∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽14</td>
+<td class="cup">♥14∽10</td>
+<td class="coin">♦6|0</td>
+<td class="sword">♠6/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(5) 法王 The Hierophant<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(5 Inv.) 法王 The Hierophant</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/0</td>
+<td class="coin">♦14|6</td>
+<td class="cup">♥6∽6</td>
+<td class="wand">♣14∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽14</td>
+<td class="cup">♥6∽6</td>
+<td class="coin">♦6|14</td>
+<td class="sword">♠0/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(6) 恋人 The Lovers<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(6 Inv.) 恋人 The Lovers</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/6</td>
+<td class="coin">♦10|6</td>
+<td class="cup">♥10∽14</td>
+<td class="wand">♣14∽0</td>
+<td class="border"> </td>
+<td class="wand">♣0∽14</td>
+<td class="cup">♥14∽10</td>
+<td class="coin">♦6|10</td>
+<td class="sword">♠6/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(7) 戦車 The Chariot<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(7 Inv.) 戦車 The Chariot</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠14/14</td>
+<td class="coin">♦6|6</td>
+<td class="cup">♥0∽6</td>
+<td class="wand">♣10∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽10</td>
+<td class="cup">♥6∽0</td>
+<td class="coin">♦6|6</td>
+<td class="sword">♠14/14</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(8) 力 Strength<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(8 Inv.) 力 Strength</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/10</td>
+<td class="coin">♦0|6</td>
+<td class="cup">♥14∽14</td>
+<td class="wand">♣6∽6</td>
+<td class="border"> </td>
+<td class="wand">♣6∽6</td>
+<td class="cup">♥14∽14</td>
+<td class="coin">♦6|0</td>
+<td class="sword">♠10/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(9) 隠者 The Hermit<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(9 Inv.) 隠者 The Hermit</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠0/14</td>
+<td class="coin">♦14|6</td>
+<td class="cup">♥6∽6</td>
+<td class="wand">♣10∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽10</td>
+<td class="cup">♥6∽6</td>
+<td class="coin">♦6|14</td>
+<td class="sword">♠14/0</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(10) 運命の輪 Wheel of Fortune<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(10 Inv.) 運命の輪 Wheel of Fortune</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/10</td>
+<td class="coin">♦10|10</td>
+<td class="cup">♥10∽10</td>
+<td class="wand">♣6∽0</td>
+<td class="border"> </td>
+<td class="wand">♣0∽6</td>
+<td class="cup">♥10∽10</td>
+<td class="coin">♦10|10</td>
+<td class="sword">♠10/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(11) 正義 Justice<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(11 Inv.) 正義 Justice</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/10</td>
+<td class="coin">♦10|10</td>
+<td class="cup">♥0∽6</td>
+<td class="wand">♣10∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽10</td>
+<td class="cup">♥6∽0</td>
+<td class="coin">♦10|10</td>
+<td class="sword">♠10/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(12) 吊るされた男 The Hanged Man<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(12 Inv.) 吊るされた男 The Hanged Man</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/10</td>
+<td class="coin">♦6|14</td>
+<td class="cup">♥6∽10</td>
+<td class="wand">♣0∽14</td>
+<td class="border"> </td>
+<td class="wand">♣14∽0</td>
+<td class="cup">♥10∽6</td>
+<td class="coin">♦14|6</td>
+<td class="sword">♠10/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(13) 死神 Death (使わない Not Use)<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(13 Inv.) 死神 Death (使わない Not Use)</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/0</td>
+<td class="coin">♦10|10</td>
+<td class="cup">♥10∽6</td>
+<td class="wand">♣10∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽10</td>
+<td class="cup">♥6∽10</td>
+<td class="coin">♦10|10</td>
+<td class="sword">♠0/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(14) 節制 Temperance<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(14 Inv.) 節制 Temperance</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/10</td>
+<td class="coin">♦14|6</td>
+<td class="cup">♥6∽14</td>
+<td class="wand">♣0∽6</td>
+<td class="border"> </td>
+<td class="wand">♣6∽0</td>
+<td class="cup">♥14∽6</td>
+<td class="coin">♦6|14</td>
+<td class="sword">♠10/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(15) 悪魔 The Devil<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(15 Inv.) 悪魔 The Devil</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/6</td>
+<td class="coin">♦6|14</td>
+<td class="cup">♥10∽0</td>
+<td class="wand">♣6∽14</td>
+<td class="border"> </td>
+<td class="wand">♣14∽6</td>
+<td class="cup">♥0∽10</td>
+<td class="coin">♦14|6</td>
+<td class="sword">♠6/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(16) 塔 The Tower<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(16 Inv.) 塔 The Tower</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/14</td>
+<td class="coin">♦10|6</td>
+<td class="cup">♥14∽0</td>
+<td class="wand">♣6∽6</td>
+<td class="border"> </td>
+<td class="wand">♣6∽6</td>
+<td class="cup">♥0∽14</td>
+<td class="coin">♦6|10</td>
+<td class="sword">♠14/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(17) 星 The Star<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(17 Inv.) 星 The Star</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/6</td>
+<td class="coin">♦10|14</td>
+<td class="cup">♥6∽6</td>
+<td class="wand">♣14∽0</td>
+<td class="border"> </td>
+<td class="wand">♣0∽14</td>
+<td class="cup">♥6∽6</td>
+<td class="coin">♦14|10</td>
+<td class="sword">♠6/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(18) 月 The Moon<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(18 Inv.) 月 The Moon</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠6/14</td>
+<td class="coin">♦0|14</td>
+<td class="cup">♥10∽10</td>
+<td class="wand">♣6∽6</td>
+<td class="border"> </td>
+<td class="wand">♣6∽6</td>
+<td class="cup">♥10∽10</td>
+<td class="coin">♦14|0</td>
+<td class="sword">♠14/6</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(19) 太陽 The Sun<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(19 Inv.) 太陽 The Sun</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠14/6</td>
+<td class="coin">♦0|14</td>
+<td class="cup">♥6∽6</td>
+<td class="wand">♣10∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽10</td>
+<td class="cup">♥6∽6</td>
+<td class="coin">♦14|0</td>
+<td class="sword">♠6/14</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(20) 審判 Judgement<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(20 Inv.) 審判 Judgement</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠10/0</td>
+<td class="coin">♦14|6</td>
+<td class="cup">♥6∽10</td>
+<td class="wand">♣6∽14</td>
+<td class="border"> </td>
+<td class="wand">♣14∽6</td>
+<td class="cup">♥10∽6</td>
+<td class="coin">♦6|14</td>
+<td class="sword">♠0/10</td>
+</tr>
+<tr class="card_name">
+<td class="card_name" colspan="4">(21) 世界 The World<span class="trick">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+<td class="border"> </td>
+<td class="card_name" colspan="4">(21 Inv.) 世界 The World</td>
+</tr>
+<tr class="numbers">
+<td class="sword">♠0/10</td>
+<td class="coin">♦6|14</td>
+<td class="cup">♥14∽6</td>
+<td class="wand">♣6∽10</td>
+<td class="border"> </td>
+<td class="wand">♣10∽6</td>
+<td class="cup">♥6∽14</td>
+<td class="coin">♦14|6</td>
+<td class="sword">♠10/0</td>
+</tr>
+</table>
+</div>
+<div id="code_div">
+<table id="code" align="center" cellspacing="0" cellpadding="8">
+<tr class="numbers">
+<td class="sword">♠offence/deffence</td>
+<td class="coin">♦pain|gain</td>
+<td class="cup">♥upper∽lower</td>
+<td class="wand">♣upper∽lower</td>
+</tr>
+</table>
+</div>
+<div id="rules-div">
+<table id="rules" cellspacing="0" cellpadding="0" align="center">
+<tr><td class="upper_trigram" colspan="2">上卦 Upper Trigram</td></tr>
+<tr>
+<td class="formula" colspan="2">↑♠: Max(@♦) + (→A)[/♠defence] &gt; $♠ + (→A)[♦/pain]</td>
+</tr>
+<tr>
+<td class="move">Move→: $♠⇒(↑♠)</td>
+<td class="stay">Stay: $♠⇒×, Max(@♦)⇒(←♦)</td>
+</tr>
+<tr>
+<td class="formula" colspan="2">↑♦: Stay.</td>
+</tr>
+<tr>
+<td class="move"></td><td class="stay">Stay: $♦⇒(@♦)</td>
+</tr>
+<tr>
+<td class="formula" colspan="2">↑♥: $♥ + (@A)[♥/upper] &gt; (←A)[♣/upper]</td>
+</tr>
+<tr>
+<td class="move">Move←: $♥⇒(↓♥)</td>
+<td class="stay">Stay: $♥⇒(↓♥)</td>
+</tr>
+<tr>
+<td class="formula" colspan="2">↑♣: $♣ + (@A)[♣/upper] + Max(↓♥!(need)) + (↓A)[/♥lower] &gt; Sum(@♦) + (@A)[/♦gain]</td>
+</tr>
+<tr>
+<td class="move">Move↓: $♣⇒×, Max(↓♥)⇒×</td>
+<td class="stay">Stay: $♣⇒×, Max(@♦)⇒(↓♦)</td>
+</tr>
+<tr>
+<tr><td class="lower_trigram" colspan="2">下卦 Lower Trigram</td></tr>
+<tr>
+<td class="formula"colspan="2">↓♠: $♠ + (@A)[♠/offence] + Sum(↓♦) &gt; (↑A)[/♠defence] + Sum(↑♦) + Sum(↑♠)</td>
+</tr>
+<tr>
+<td class="move" colspan="2">Move↑: Sum(↓♦)⇒×, Sum(↑♠)⇒×, $♠⇒(↑♠)</td>
+</tr>
+<tr>
+<td class="stay">Stay: (chose) Sum(@♥)⇒×, $♠⇒×</td>
+<td class="stay">(obliged) Max(@♥)⇒×, $♠⇒×</td>
+</tr>
+<tr>
+</td><td class="formula" colspan="2">↓♦: $♦ + (@A)[♦/pain] &gt; (←A)[/♦gain]</td>
+</tr>
+<tr>
+<td class="move">Move←: $♦⇒(↑♦)</td>
+<td class="stay">Stay: $♦⇒(↓♦)</td>
+</tr>
+<tr>
+<td class="formula" colspan="2">↓♥: Stay.</td>
+<tr>
+<td class="move"></td>
+<td class="stay">Stay: $♥⇒(@♥)</td>
+</tr>
+<tr>
+<td class="formula" colspan="2">↓♣: $♣ + (@A)[/♣lower] &gt; Suitable(@♥!(need)) + (→A)[/♥lower]</td>
+</tr>
+<tr>
+<td class="move">Move→: $♣⇒×, Min(Suitable(@♥))⇒×</td>
+<td class="stay">Stay: $♣⇒×</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

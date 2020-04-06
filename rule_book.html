@@ -1,0 +1,833 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Time-stamp: "2020-03-28T01:41:14Z" -->
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Language" content="ja,en" />
+
+<title>易双六 Youscout ～ a Tarot Solitaire</title>
+
+<meta name="author" content="JRF" />
+<meta name="version" content="0.23a" />
+<meta name="home" content="http://jrf.cocolog-nifty.com/archive/youscout/" />
+
+<style type="text/css">
+div.main {
+  margin: 3em;
+  margin-bottom: 3em;
+}
+div.en p {
+  text-indent: 1.5em;
+}
+div.ja p {
+  text-indent: 1em;
+}
+span.small {
+  font-size: smaller;
+}
+
+h2 {
+  margin-top: 3em;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="main en" lang="en" id="manual_en">
+<h1>易双六 Youscout <span class="subtitle">～ a Tarot Solitaire ～</span> Playing Manual</h1>
+
+<h2 id="YSC_START_EN">■ YOUSCOUT MANUAL</h2>
+<pre>
+"Youscout" is a sort of solitaire games playing with tarot cards, 
+inspired by arguments about Yi-Ching divination.
+
+This document includes these chapters:
+
+●<a href="#YSC_MANUP_EN">Manipulation at this console,</a>
+
+●<a href="#YSC_RMAIN_EN">Rule of "Youscout",</a>
+
+●<a href="#YSC_ABOUT_EN">About distribution,</a>
+
+●<a href="#YSC_START_JA">Japanese (ニホンゴ) manual.</a>
+</pre>
+
+<h2 id="YSC_MANUP_EN">■ Manipulation</h2>
+<pre>
+At the beginning of a game, you select a place 
+by the tiny card of the display. 
+
+Progress game by touching the talon.
+("Talon" means a stack of cards to draw.)
+
+Sometimes, you are prompted to choose "MOVE" or "STAY". 
+You can choose it.
+
+You can cancel animations by touching the talon.
+
+To go back to the title, reload the page, 
+</pre>
+
+<h2 id="YSC_RMAIN_EN">■ Rule</h2>
+<pre>
+●<a href="#YSC_RABST_EN">Flow of the Game.</a>
+●<a href="#YSC_RMKBD_EN">Make a Board.</a>
+●<a href="#YSC_RSUIT_EN">Read Rules.</a>
+●<a href="#YSC_RREPL_EN">War Replacement.</a>
+●<a href="#YSC_RWORL_EN">Win or Lose.</a>
+●<a href="#YSC_RSWAP_EN">Swap of (8),(11)</a>
+●<a href="table1.html">Rules and Scores of Major Arcana.</a>
+●<a href="table2.html">Rules and Scores of Major Arcana (x2).</a>
+</pre>
+
+<h2 id="YSC_RABST_EN">■ Flow of Game</h2>
+<pre>
+Shuffle the 22(-2) major arcana of Tarot. 
+Draw 6 cards and make a "board" by them.
+
+Place the token there.
+
+
+Shuffle the 56 minor arcana inserted with 1 major arcanum to make a talon.
+
+Draw a card from the talon. 
+Move the token following to the rules 
+by the suit (♠♦♥♣) of the drawn card and the token place (↑↓).
+
+
+The game is finished when the inserted major arcana appears the pre-defined times.
+
+The current token place decides you win or you lose.
+</pre>
+
+<h2 id="YSC_RMKBD_EN">■ Make a Board</h2>
+<pre>
+Sort out (0) and (13) of 22 major arcana. 
+Shuffle the rest and put drawn 6 of them to make a "board" as follows:
+
+    [6]   [4]  
+[0]    [5]     
+       [2]     
+  [3]       [1]
+
+On [0], put (0) and (13).
+
+
+We call them as a "hexagram".
+
+In a hexagram, we call [1]  as the "base place", 
+[6] as the "senior place", 
+and others as 2nd place, 3rd place, 4th place and 5th place.
+
+We call [1][2][3] as the "lower trigram" and 
+[4][5][6] as the "upper trigram".
+
+
+After the history of Tarot, 
+you must swap (8) and (11) if one of which exists on the board.
+If one of which does't exist on the board, 
+you must swap them by retrieving the other from the stack.
+
+There are some manners of swap, 
+but at first you should always swap them.
+
+
+You place the token on one of the places [1]-[6] as you like.
+That is the start place of the token.
+
+●When you placed it on [1][2][3], then it is (13),
+
+●When you placed it on [4][5][6], then it is (0),
+
+insert it into the stack of 56 minor arcana and shuffle them to make a talon.
+
+(0) or (13) rest on the board is called as the purpose card.
+
+
+Game is started.
+
+Draw a card. Read the rule by the suit(♠♦♥♣) of the drawn card, 
+by the place(↑↓) of the token and 
+by the score table of the major arcana. 
+Following it, you are directed to move the token or stay.
+
+The drawn (0) or (13) is called as the terminal card.
+
+
+When the terminal card appears first time or 2nd time, 
+gather the terminal, the discarded and the rest of the talon 
+and shuffle them to make a new talon.
+
+When the terminal card appears 3rd time, the game reaches finish. 
+Look win or lose.
+
+(You can pre-define the number of times other than 3.)
+</pre>
+
+<h2 id="YSC_RSUIT_EN">■ Read the Rules</h2>
+<pre>
+Generally, correspondence of the suit of the minor arcana of Tarot 
+and that of Trump is not definite.
+
+However, in this game, we treat them as corresponded by:
+
+♠:Swords,
+♦:Coins,
+♥:Cups,
+♣:Wands.
+
+
+You put the cards as follows.:
+
+       [8]     
+    [6]   [4]  
+[0]    [5]     
+       [2]     
+  [3]       [1]
+       [7]     
+
+You put minor arcana beside the major arcana of [1]-[6] 
+or on the spaces of [7] or [8].
+
+
+Coins on [1][2][3][7], Cups on [4][5][6] and Swords on [8].
+
+In rules, we write [7] as "↓♦" and [8] as "↑♠".
+
+"$" means the drawn card. 
+For example, "$♥" means the drawn card of cups.
+
+
+Take "♥" as example. It means the whole cups of :
+
+the current place by "@♥",
+
+the right place by "→♥",
+the left place by "←♥",
+the upper place by "↑♥",
+the lower place by "↓♥".
+
+
+The ← of [3] is [4]. The → of [4] is [3].
+
+The ← of [6] is [1]. The → of [1] is [6].
+
+The ↑ of [3][2][1] are [6][5][4] respectively.
+
+The ↓ of [6][5][4] are [3][2][1] respectively.
+
+At [6], "←♦" is "↓♦" i.e. [7].
+
+
+Rules are Compare-Rules and Change-Rules.
+
+A Compare-Rule forms like "○ &gt; □".
+Comparing "score"s of ○ and □ directs to move the token if greater.
+
+(There are rules which direct only to stay.)
+
+(There is a rule that you can choose stay even after directed to move.)
+
+
+A Change-Rule varies by move or stay.
+
+There must be distincted rules for stay 
+if stay can be chosen after directed to move.
+
+A Change-Rule forms like a sequence of "○⇒□"s.
+If □  is "×" then you discard ○. Otherwise, change the cards.
+
+
+The "score" of a card is the number of the card.
+
+That of "♥2"is 2. That of "♥A" is 1.
+
+Those of "♥J","♥C","♥Q","♥K" are 
+11,12,13,14 respectively.
+
+(In a manner, The score of "♥J","♥C","♥Q","♥K" is all 10.)
+
+
+"Max" means maximum. Max(@♥) is 
+(one of) the maximum scored card of the cups of the current place.
+
+"Sum" means summation. Sum(@♦) is 
+the summation of the scores of the coins of the current place.
+
+
+The score of Max or Sum is calculated as 0 with no corresponded card.
+
+However, with the necessary mark "!", you must stay the token if none.
+
+For example, with no corresponded card, Max(@♦) is 0 but 
+Max(↓♥!) interrupts your calculation and you must stay the token.
+
+
+Suitable means "at least one suitable card". Suitable(@♥!) is necessary 
+one of the cups of the current place which can make the Compare-Rule 
+greater.
+
+Min(Suitable(@♥)) is the minimum scored card of such cups.
+
+If it appears in the right of the Compare-Rule, 
+What you must check is only the minimum scored card of @♥.
+
+
+The "score" of major arcana is written as "(→A)[/♠]" for example.
+
+With it, you look the "score table of major arcana" 
+about the major arcanum of the right place.
+
+In the table, when you read "♠○/□", 
+because of "[/♠]", □ must be the score.
+
+
+However, when the major arcanum is reversal, 
+you must read the table reversally right to left.
+
+With the reversal major arcanum, 
+when you read "♠○/□" in the table, 
+because of "[/♠]", ○ must be the score.
+
+There are manners to multiply the score by 2 or 3 to read.
+Usually, multiply it by 2.
+</pre>
+
+<h2 id="YSC_RREPL_EN">■ War Replacement</h2>
+<pre>
+Experimental rule.
+
+When you chose "move" at the sword in the lower trigram,
+after you handled the cards as above,
+you can 3 times replace a cup or coin
+to another cup place or coin place.
+
+You must use a cup on a coin place or a coin on a cup place
+as a coin or a cup respectively in the same numerical value.
+
+You can pre-define the number of times other than 3
+like 0 or infinity.
+
+You can pre-define not to "cross-border".
+If you define it, a cup must place a cup place and
+a coin must place a coin place.
+
+You can pre-defined full "cross-border". I don't recommend it.
+If you define it, you can replace a sword, replace to a sword
+place or discard a sword, a cup or a coin.
+</pre>
+
+<h2 id="YSC_RWORL_EN">■ Win or Lose</h2>
+<pre>
+If you started in the upper trigram [6][5][4] and namely 
+the terminal card is (0), then 
+you win with the token placed on [6] or [5] at finish.
+
+If you started in the lower trigram [3][2][1] and namely 
+the terminal card is (13), then 
+you win with the token placed on [2] or [5] at finish.
+
+Otherwise, you lose.
+</pre>
+
+<h2 id="YSC_RSWAP_EN">■ Swap of 8 and 11</h2>
+<pre>
+When making a board, you must swap (8) and (11) by one of manners.
+There are three manners.:
+
+●<a href="#YSC_SWMEM_EN">the Memorial Method,</a>
+
+●<a href="#YSC_SWEXP_EN">the Expansive Method,</a>
+
+●<a href="#YSC_SWSOL_EN">the Solid Method.</a>
+</pre>
+
+<h2 id="YSC_SWMEM_EN">■ Memorial Method</h2>
+<pre>
+Simply, you must swap (8) or (11) anyway 
+if one of which exists on the board.
+
+If (8) is reversal in one place, you place there (11) reversally.
+
+If (11) is reversal in one place, you place there (8) reversally.
+
+The point to preserve upright or reversal is the same in the other manners.
+</pre>
+
+<h2 id="YSC_SWEXP_EN">■ Expansive Method</h2>
+<pre>
+When (8) and (11) appear simultaneously, swap them anyway.
+
+Otherwise:
+
+When the number of odd numbers of cards is greater than evens', 
+swap to be more greater.
+When it is less than evens', swap to be more less.
+
+When odds' and evens' are 3, swap only if (8) or (11) is upright.
+</pre>
+
+<h2 id="YSC_SWSOL_EN">■ Solid Method</h2>
+<pre>
+When the number of odd numbers of cards is 0,1,5,6, don't swap. 
+When it is 2,3,4, swap (8) and (11) if one of which exists.
+
+Then, after swap if you must swap, 
+when odds' and evens' are 3, 
+you must look spins (i.e. cards are upright or reveasal).
+
+
+When all are upright, it is called as "Force Whirl".
+
+When all are reversal, it is called as "Field Whirl".
+
+When odds' are upright and evens' are reversal, 
+it is called as "Force Eclipse". 
+
+When odds' are reversal and evens' are upright, 
+it is called as "Field Eclipse". 
+
+
+When "Force Whirl" or "Force Eclipse", 
+you must place the token at first in the lower trigram and 
+put the purpose card (0) horizontally.
+
+When "Field Whirl" or "Field Eclipse", 
+you must place the token at first in the upper trigram and 
+put the purpose card (13) horizontally.
+</pre>
+
+<h2 id="YSC_ABOUT_EN">■ About Dist.</h2>
+<pre>
+The game "Youscout" was made by JRF 
+after traditional ideas and arguments about 
+Tarot and Yi-King, and some modern card/board-games.
+
+In the same time of making the rules, the web-programed game was made.
+
+
+Thank you for playing this game.
+Thank you for reading poor English.
+</pre>
+
+<div class="back-link">
+<a href="index.html">Back</a>
+</div>
+
+</div>
+
+<div class="main ja" lang="ja" id="manual_ja">
+<h1>易双六【ようすこう】 <span class="subtitle">～タロット ソリティア ゲーム～</span> カタカナ マニュアル</h1>
+
+<h2 id="YSC_START_JA">■ ヨウスコウ マニュアル</h2>
+<pre>
+「ヨウスコウ」ハ タロット=カード ヲ ツカッタ ソリティア=ゲーム
+ノ イッシュ デ、エキ=キョウ ノ リロン ニ ヒント ヲ エテイル。
+
+コノ セツメイショ ニ フクマレル ダイ=コウモク ハ ツギ ノ トオリ:
+
+●<a href="#YSC_MANUP_JA">ゲーム ノ ソウサ、</a>
+
+●<a href="#YSC_RMAIN_JA">「ヨウスコウ」ノ ルール、</a>
+
+●<a href="#YSC_ABOUT_JA">ハイフブツ ニ カンシテ、</a>
+
+●<a href="#YSC_START_EN">エイゴ (English) マニュアル。</a>
+</pre>
+
+
+<h2 id="YSC_MANUP_JA">■ ソウサ ホウホウ</h2>
+<pre>
+ゲーム ノ ハジマリ デハ、シタ ガメン ノ チイサナ カード デ、
+イチ ヲ センタク スル。
+
+ゲーム チュウ ハ ガメン ノ カード=ヤマ ニ タッチ シテ ゲーム ヲ ススメル。
+
+トチュウ「ウゴク」カ「トドマル」カ キカレル コトガアル。
+ソノ バアイ ハ、タッチ シテ センタク スル。
+
+アニメーション チュウ ニ、カード=ヤマ ヲ タッチ スルト、
+アニメーション ハ オワル。
+
+タイトル ガメン ニ モドル ニハ ページ ヲ リロード スル。
+</pre>
+
+<h2 id="YSC_RMAIN_JA">■ ルール</h2>
+<pre>
+●<a href="#YSC_RABST_JA">ゲーム ノ ナガレ。</a>
+
+●<a href="#YSC_RMKBD_JA">バン ヲ ツクル。</a>
+
+●<a href="#YSC_RSUIT_JA">ルール ノ ヨミカタ。</a>
+
+●<a href="#YSC_RREPL_JA">センラン チカン。</a>
+
+●<a href="#YSC_RWORL_JA">ゲーム ノ カチ マケ。</a>
+
+●<a href="#YSC_RSWAP_JA">(8)ト(11)ノ イレカエ。</a>
+
+●<a href="table1.html">ルール ト ダイ=アルカナ スウヒョウ。</a>
+
+●<a href="table2.html">ルール ト ダイ=アルカナ スウヒョウ (x2)。</a>
+</pre>
+
+<h2 id="YSC_RABST_JA">■ ゲーム ノ ナガレ</h2>
+<pre>
+タロット カード ノ ダイ=アルカナ 22(-2)マイ ヲ シャッフル シテ、
+6マイ カード ヲ ヒキ、「バン」ヲ ツクル。
+
+ソコ ニ トークン ヲ オク。
+(「トークン」トハ ゲーム ノ コマ ノ コト。)
+
+
+ショウ＝アルカナ 56マイ ニ ダイ=アルカナ 1マイ ヲ クワエ、シャッフル。
+ソレヲ ヒキ、デタ スート(♠♦♥♣) ト、トークン ノ イチ(↑↓) ニ 
+オウジタ ルール ニ シタガッテ、トークン ヲ ウゴカス。
+
+ダイ=アルカナ ヲ キメタ カイスウ ヒイタ トキ、ゲーム シュウリョウ。
+トークン ノ アル イチ デ カチ マケ ガ キマル。
+</pre>
+
+<h2 id="YSC_RMKBD_JA">■ バン ヲ ツクル</h2>
+<pre>
+ダイ=アルカナ 22マイ カラ(0)ト(13)ノ カード ヲ トリノゾク。
+ノコリ 20マイ ヲ シャッフル シ、ツギ ノ ヨウ ニ ナラベ、
+「バン」ト スル。
+
+    [6]   [4]  
+[0]    [5]     
+       [2]     
+  [3]       [1]
+
+ナオ、[0]ニハ(0)ト(13)ノ カード ヲ オイテオク。
+
+
+サキ ノ[1]ヲ「ショコウ」、[6]ヲ「ジョウコウ」、
+ソレイガイ ハ 2コウ、3コウ、4コウ、5コウ ト ヨブ。
+
+[1][2][3]ヲ「シモカ」、[4][5][6]ヲ「ジョウカ」ト ヨブ。
+
+(ナオ「シモカ」ハ ユトウ=ヨミ ダガ、コノ ゲーム デハ、
+エキ=キョウ ノ ホカ ノ ヨウゴ ト クベツ スルタメ、コウ ヨブ。)
+
+
+タロット ノ レキシ ヲ キネン シ、
+バン ニ(8)カ(11)ノ カード ガ デテイレバ イレカエル。
+イッポウ ガ デテイナケレバ、ヤマ カラ トッテ デモ イレカエル。
+
+イレカエ ノ リュウギ ハ イクツカ アルガ、
+マズ ハ カナラズ イレカエル ヨウ ニ スレバ イイ。
+
+
+[1]カラ[6]ノ スキナ トコロ ニ トークン ヲ オク。
+ココガ ゲーム カイシ イチ トナル。
+
+●[1][2][3]ニ トークン ヲ オイタラ(13)ノ カード ヲ、
+
+●[4][5][6]ニ トークン ヲ オイタラ(0)ノ カード ヲ、
+
+ショウ=アルカナ ノ カード ニ マゼ、シャッフル。
+
+バン ニ ノコッタ(0)カ(13)ヲ モクテキ カード ト ヨブ。
+
+
+ゲーム カイシ デアル。
+
+カード ヲ イチ マイ ヒキ、デタ スート(♠♦♥♣) ト、
+トークン ノ イチ(↑↓) ニ オウジタ ルール ト、
+ダイ=アルカナ ノ スウヒョウ ヲ ヨミ、
+ソレニ シタガウ。
+
+
+ソノ カード ガ(0)カ(13)ノトキ、ソレヲ シュウリョウ カード ト ヨブ。
+
+シュウリョウ カード ガ、1ドメ、2ドメ ノ バアイ ハ、
+ソレ ヲ カード=ヤマ ニ モドシ、ステタ カード ト トモ ニ シャッフル。
+
+シュウリョウ カード ガ 3ドメ ニ デタラ、ゲーム シュウリョウ デ、
+カチ マケ ヲ シラベル。
+
+ナオ、サイショ ニ キメテ オケバ 3ド デナク、1ド デモ、ナンド デモヨイ。
+</pre>
+
+<h2 id="YSC_RSUIT_JA">■ ルール ノ ヨミカタ</h2>
+<pre>
+イッパン ニ タロット ノ ショウ=アルカナ ト 
+トランプ ノ スート ノ タイオウ ハ メイカク デハ ナイ。
+
+シカシ、コノ ゲーム デハ ツギ ノ ヨウ ニ タイオウ サセル。:
+
+♠:ソード (ツルギ)
+♦:コイン (カネ)
+♥:カップ (ハイ)
+♣:ワンド (シャクジョウ)
+
+カッコ ナイ ハ、コノ ゲーム ナイ ノ ヨビカタ。
+ニホンゴ ノ ダイ=アルカナ ノ ヨビカタ モ ツウジョウ ト コトナル。
+
+
+カード ハ ツギ ノ ヨウニ オク。
+
+       [8]     
+    [6]   [4]  
+[0]    [5]     
+       [2]     
+  [3]       [1]
+       [7]     
+
+[1]-[6]ノ ダイ=アルカナ ノ ワキ、マタハ、[7][8]ノ スペース ニ 
+ショウ=アルカナ ヲ オイテイク。
+
+
+[1][2][3][7]ニハ コイン、[4][5][6]ニハ カップ、[8]ニハ、ソード。
+
+ルール デ [7]ハ「↓♦」ト シルス。[8]ハ「↑♠」ト シルス。
+
+「$」ハ ヒイタ カード ヲ シメス。
+タトエバ、「$♥」ハ ヒイタ カップ ノ カード ヲ シメス。
+
+
+カップ「♥」ヲ レイ ニ スル ト、トークン ノ アル コウ ノ:
+
+「@♥」ハ、ゲンザイ ノ コウ、
+
+「→♥」ハ、ミギ ノ コウ、
+
+「←♥」ハ、ヒダリ ノ コウ、
+
+「↑♥」ハ、ウエ ノ コウ、
+
+「↓♥」ハ、シタ ノ コウ、
+
+ソレゾレ ノ スベテ ノ カップ ノ カード ヲ シメス。
+
+
+[3] ノ ← ハ [4]、[4] ノ → ハ [3]。
+
+[6] ノ ← ハ [1]、[1] ノ → ハ [6]。
+
+[3][2][1] ノ ↑ ハ ソレゾレ [6][5][4]。
+
+[6][5][4] ノ ↓ ハ ソレゾレ [3][2][1]。
+
+[6] デ「←♦」ハ、「↓♦」スナワチ[7]。
+
+
+ルール ニハ ヒカク=ルール ト ヘンカ=ルール ガ アル。
+
+ヒカク=ルール ハ「○ &gt; □」ノ カタチ ヲ シテイル。
+○ ト □ ノ「スコア」ヲ ヒカク シ、オオキケレバ ウゴク。
+
+ナオ、ルール ノ ナカ ニハ トドマル シカナイ モノ モ アル。
+
+マタ、ウゴク ト キマッテモ、トドマル コト ヲ エラベル モノ ガ アル。
+
+
+ヘンカ=ルール ハ、ウゴク カ、トドマル カ デ チガウ。
+
+トドマル トキ モ ウゴク ト キマッテカラ エラベル モノ ニハ、
+ソノタメ ノ ヘンカ=ルール ガ ベツ ニ アル。
+
+ヘンカ=ルール ハ イクツカ ノ「○⇒□」ノ カタチ ヲ シテイル。
+
+□ ガ 「×」ナラ カード ヲ ステバショ ニ ステル。
+ソレ イガイ ハ カード ヲ イドウスル。
+
+
+カード ノ「スコア」ハ、カード ニ カカレタ スウチ。
+
+「♥2」デアレバ「2」。「♥A」ハ「1」。
+
+「♥J」「♥C」「♥Q」「♥K」デアレバ、
+ソレゾレ、「11」「12」「13」「14」トスル。
+
+(「♥J」「♥C」「♥Q」「♥K」ノ スコア ヲ 
+スベテ「10」トスル リュウギ モ アル。)
+
+
+Max ハ サイダイ。Max(@♥) ハ、
+ゲンザイ コウ ノ カップ ノ カード ノ スコア ガ 
+サイダイ ノ モノ(ノ ドレカ ヒトツ)。
+
+Sum ハ ゴウケイ。Sum(@♦) ハ、
+ゲンザイ コウ ノ コイン ノ スコア ヲ 
+スベテ タシタ モノ。
+
+
+カード ガ ナイ バアイ ノ Max ヤ Sum ノ スコア ハ、
+ 0 ト ケイサン スル。
+
+タダシ、ヒツヨウ マーク 「!」ガ ツイテイル モノ ハ、
+ソノ カード ガ ナイ バアイ ハ、トドマル シカナイ。
+
+タトエバ、カード ガ ナケレバ、Max(@♦) ハ 0 トスルガ、
+Max(↓♥!) ハ、ソコデ ケイサン ヲ ヤメ、トドマル シカナイ。
+
+
+Suitable ハ「ドレカ ヒトツ デモ テキトウナ」。Suitable(@♥!) ハ、
+ゲンザイ コウ ノ カップ ノ ウチ ノ ドレカ ヒトツ デ、ソレ デ 
+ヒカク=ルール ヲ オオキイ ト ハンダン デキル モノ。
+
+Min(Suitable(@♥)) ハ ソウ ハンダン デキル モノ ノ ナカ デ、
+サイショウ ノ モノ。
+
+コレ ガ ヒカク=ルール ノ ミギ ガワ ニ アルナラ、
+@♥ ノ サイショウ スコア ノ カード ニ カンシ カクニン スルダケデヨイ。
+
+
+ダイ=アルカナ ノ「スコア」ハ タトエバ「(→A)[/♠]」ト カカレル。
+
+コノ トキ ミギ ノ コウ ノ ダイ=アルカナ ニ カンシ、
+「ダイ=アルカナ スウヒョウ」ヲ ミル。
+
+スウヒョウ ニ「♠○/□」ト アレバ、
+「[/♠]」ナノデ、□ ノ スウチ ガ スコア トナル。
+
+
+タダシ ダイ=アルカナ ガ ギャク=イチ デ アレバ、
+スウヒョウ ノ サユウ ヲ ギャク ニ ヨム。
+
+ギャク=イチ デ スウヒョウ ニ「♠○/□」ト アレバ、
+「[/♠]」ナノデ、○ ノ スウチ ガ スコア トナル。
+
+マタ、ダイ=アルカナ ノ スウヒョウ ヲ ヨム トキ、
+ソレ ヲ 2バイ ヤ 3バイ ニスル リュウギ ガ アル。
+フツウ ハ 2バイ ニ スル。
+</pre>
+
+<h2 id="YSC_RREPL_JA">■ センラン チカン</h2>
+<pre>
+ジッケン テキ ルール。
+
+シモカ ノ ソード デ「ウゴク」ヲ エランダトキ、
+カード ヲ コレマデ ドオリ ウゴカシタ アト、3 カイ
+ダケ、バ ノ カップ ト コイン ノ カード ヲ ホカ ノ
+カップ マタハ コイン オキバ ニ オキカエル コト ガ
+デキル。
+
+カップ オキバ の コイン、コイン オキバ ノ カップ ハ、
+ソレゾレ カップ ヤ コイン トシテ スウチ ヲ ソノママ
+ツカウ。
+
+サイショ ニ キメテオケバ、3 カイ デナク 0 カイ デモ
+ムゲン カイ デモ ヨイ。
+
+マタ、エッキョウ セズ、カップ ハカップ オキバ ニ
+コイン ハ コイン オキ バ ニ カギル ヨウ キメテモ ヨイ。
+
+マタ、オススメシナイガ、ソード モ ウゴカシタリ、
+ソード オキバ ニ オイタリ、カード ヲ ステラレル ヨウ
+キメテモ ヨイ。
+</pre>
+
+<h2 id="YSC_RWORL_JA">■ カチ マケ</h2>
+<pre>
+ジョウカ[6][5][4]カラ ハジメタ バアイ、
+シュウリョウ カード ハ(0)、
+シュウリョウ ジ ニ[6]カ[5]ニ アレバ カチ。
+
+シモカ[3][2][1]カラ ハジメタ バアイ、
+シュウリョウ カード ハ(13)、
+シュウリョウ ジ ニ[2]カ[5]ニ アレバ カチ。
+
+ソレイガイ ナラ、マケ。
+</pre>
+
+<h2 id="YSC_RSWAP_JA">■ 8 ト 11 ノ イレカエ</h2>
+<pre>
+バン ヲ ツクッタ トキ 8 ト 11 ガ アレバ、イレカエル。
+ソノ リュウギ ハ 3ツ アル。
+
+●<a href="#YSC_SWMEM_JA">キネン=シキ</a>
+
+●<a href="#YSC_SWEXP_JA">カイ=シキ</a>
+
+●<a href="#YSC_SWSOL_JA">コ=シキ</a>
+</pre>
+
+<h2 id="YSC_SWMEM_JA">■ キネン=シキ</h2>
+<pre>
+トニカク(8)カ(11)ガ アレバ イレカエル ダケ。
+
+アル コウ デ、(8)ガ ギャク=イチ デ アレバ、
+ソノ コウ ニ(11)ヲ ギャク=イチ ニ オク。
+
+アル コウ デ、(11)ガ ギャク=イチ デ アレバ、
+ソノ コウ ニ(8)ヲ ギャク=イチ ニ オク。
+
+コノ セイ=ギャク ヲ マモル テンハ、
+コレイガイ ノ リュウギ ニ モ キョウツウスル。
+</pre>
+
+<h2 id="YSC_SWEXP_JA">■ カイ=シキ</h2>
+<pre>
+(8)ト(11)ガ ドウジ ニ デテイレバ、トニカク イレカエル。
+
+ソウデナイ トキ:
+
+キスウ ノ カード ノ マイスウ ガ 
+オオイ ナラバ、ヨリ=オオク、スクナイ ナラバ ヨリ=スクナク 
+ナルヨウニ イレカエル。
+
+キスウ ト グウスウ ノ マイスウ ガ 3マイ ヅツ ナラバ、
+(8) カ (11) ガ セイ=イチ ノ トキノミ イレカエ。ル
+</pre>
+
+<h2 id="YSC_SWSOL_JA">■ コ=シキ </h2>
+<pre>
+キスウ ノ カード ノ マイスウ ガ 0,1,5,6 ノ トキ ハ イレカエ ヲ セズ、
+2,3,4 ノトキハ、(8)カ(11)ガ アレバ、イレカエル
+
+イレカエ ガ アレバ イレカエタ アト、キスウ ト グウスウ ノ マイスウ ガ 
+3マイ ヅツ ナラバ、スピン(セイ=ギャク)ヲ ミル。
+
+
+スベテ セイ=イチ ノトキ「セン ケン」ト ヨブ。
+
+スベテ ギャク=イチ ノトキ「セン コン」ト ヨブ。
+
+キスウ ノ カード ガ スベテ セイ=イチ デ、
+グウスウ ノ カード ガ スベテ ギャク=イチ ノトキ
+「ジュウ ケン」ト ヨブ。
+
+キスウ ノ カード ガ スベテ ギャク=イチ デ、
+グウスウ ノ カード ガ スベテ セイ=イチ ノトキ
+「ジュウ コン」ト ヨブ。
+
+
+「セン ケン」マタハ「ジュウ ケン」ノトキ、
+ハジメ ノ トークン ハ シモカ ニ オカネバナラナイ。
+モクテキ カード ノ(0)ハ ヨコ ムキ ニ オク。
+
+「セン コン」マタハ「ジュウ コン」ノトキ、
+ハジメ ノ トークン ハ ジョウカ ニ オカネバナラナイ。
+モクテキ カード ノ(13)ハ ヨコ ムキ ニ オク。
+</pre>
+
+<h2 id="YSC_ABOUT_JA">■ ハイフブツ ニ カンシテ</h2>
+<pre>
+「ヨウスコウ」ハ JRF ニ ヨッテ ツクラレタ。
+タロット ヤ エキキョウ ノ カコ ノ アイデア ト ギロン、
+マタ サイキン ノ カード/ボード ゲーム ヲ サンコウ ニ ツクラレタ。
+
+ルール ヲ キメル トキ、
+ドウジ ニ ウェブ=プログラム=ゲーム モ ツクッテイタ。
+
+
+コノ ゲーム デ アソンデ クレテ アリガトウ。
+マズイ ニホンゴ ヲ ヨンデ クレテ アリガトウ。
+</pre>
+
+<div class="back-link">
+<a href="index.html">戻る</a>
+</div>
+
+</div>
+
+</body>
+</html>

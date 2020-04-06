@@ -1,0 +1,169 @@
+
+
+	易双六 カードの追加方法
+
+     	(2015-05-01 作成, Time-stamp: <2015-05-01T04:50:53Z>)
+
+
+■ カードの追加方法
+
+初歩的な HTML と JavaScript の知識(と絵心)があれば、自分で作ったカード・
+デッキで『易双六』を遊ぶことができます。
+
+『易双六』のプログラムは youscout.html だけからなっています。ここにカー
+ド・デッキを追加するには、
+
+  (1) 縦横のドット数を決めて、カードの絵を描きまとめる。(カードの絵を
+      Inkscape などで描き、決めたドット幅の大きさで出力する。)
+
+  (2) var cards_{{カードの名前}} の構造体を youscout.html に追加する。
+
+  (3) draw_setting 内の HTML の日本語と英語の select に option 要素を
+      足す。
+
+…以上のような手続きが必要となります。
+
+
+■ カードの絵を描く
+
+タロットカードの大アルカナ 22枚と、小アルカナ 56枚、カード裏、カード山、
+捨てられたカードの絵をそれぞれ描きます。カードの大きさは、仮に 103x160
+ドットとします。
+
+大アルカナ 22枚を 0番から 21番までを一行目に、二行目から五行目にかけて
+はソード、コイン、カップ、ワンドの順で 1から14(1から10までと J C Q K)ま
+でを順に並べた cards.png を作ります。
+
+カード裏はめくられるアニメーションを五枚で描いてそれを並べた backs.png
+を作ります。
+
+カード山と、捨てられたカードはカードよりも大きなサイズで、それぞれ、
+talon.png と discarded.png を作ります。
+
+例としては、simplest や jrf_tarot/medium のカードデータなどを参考にして
+ください。jrf_tarot は cards.png の六行目に他のデータが入っていますが、
+そういうデータは無視されます。
+
+
+■ カードの仕様を youscout.html に書き込む。
+
+カードの名前は仮に foobar とでもします。foobar というディレクトリに上で
+描いた cards.png, backs.png, talon.png, discarded.png があるとします。
+
+youscout.html でcards_jrf_tarot_large_dense が定義されているところの下
+にでも次のように書き足します。
+
+var cards_foobar = {
+  window_width: 1280,
+  window_height: 1024,
+
+  card_width: 103,
+  card_height: 160,
+
+  img_cards: "foobar/cards.png",
+  img_backs: "foobar/backs.png",
+  img_talon: "foobar/talon.png",
+  img_discarded: "foobar/discarded.png"
+};
+
+デフォルトのカードの設定を foobar にしたいときは、var setting_default
+の次の部分を変更します。
+
+var setting_default = {
+  lang: LANG,
+  page_help: "index.html",
+// 下記をコメントアウトして、新たに cards を "foobar" に設定。
+//    cards: ((FORCE_DEFAULT_JRF_TAROT || location.hostname == 'jrf.cocolog-nifty.com')? ((window.innerHeight && window.innerHeight > 768)? 'jrf_tarot_medium' : 'jrf_tarot_small_dense') : 'simplest'),
+    cards: "foobar"
+
+youscout.html では、setting.cards に設定されたものを
+window["cards_" + setting.cards] でアクセスしていくので
+var cards_foobar の設定だけでカードが追加されることになるのです。
+
+
+■ 設定でカード・デッキを選択できるようにする。
+
+draw_setting という要素関数の定義を検索してください。そこには、var
+html_ja に日本語の設定内容が、var html_en に英語での設定内容があります。
+そこの HTML に option 文を足します。
+
+    var html_ja = '\
+<form>\
+<table>\
+<tr><td>カード:</td><td><select id="cards">\
+<option value="simplest">超シンプルなカード (1024x768)</option>\
+<option value="jrf_tarot_small">JRF タロット (小, 1024x768)</option>\
+<option value="jrf_tarot_medium">JRF タロット (中, 1280x1024)</option>\
+<option value="jrf_tarot_small_dense">JRF タロット (小・密, 800x600)</option>\
+<option value="jrf_tarot_medium_dense">JRF タロット (中・密, 1024x768)</option>\
+<option value="jrf_tarot_large_dense">JRF タロット (大・密, 1280x1024)</option>\
+<option value="foobar">foobar タロット (中, 1280x1024)</option>\
+</select></td></tr>\
+
+
+var html_en にも忘れず足しましょう。
+
+    var html_en = '\
+<form>\
+<table>\
+<tr><td>Cards:</td><td><select id="cards">\
+<option value="simplest">The simplest cards (1024x768)</option>\
+<option value="jrf_tarot_small">The JRF Tarot (small, 1024x768)</option>\
+<option value="jrf_tarot_medium">The JRF Tarot (medium, 1280x1024)</option>\
+<option value="jrf_tarot_small_dense">The JRF Tarot (small dense, 800x600)</option>\
+<option value="jrf_tarot_medium_dense">The JRF Tarot (medium dense, 1024x768)</option>\
+<option value="jrf_tarot_large_dense">The JRF Tarot (large dense, 1280x1024)</option>\
+<option value="foobar">Foobar Tarot (medium, 1280x1024)</option>\
+</select></td></tr>\
+
+
+以上で、設定に追加されるはずです。作業終了です。起動すれば、"foobar"
+カードが使えるようになっているはずです。
+
+
+■ おまけ：広告(アフィリエイト)を設定する。
+
+youscout.html の一番下のほうを見てください。<!-- Google AdSense -
+Cocolog Youscout --> と書いた下に <!-- と --> でコメントアウトされてい
+るウィジェットコードがあります。そのコメント記号<!-- と --> を下記のよ
+うにはずし、ad_area 内のコードを自分のアフィリエイト用コードに書き換え
+れば、広告を表示できるようになります。ad_area という id が DOM 内にある
+かどうかで広告表示を行なうかどうか決めているのでこれだけでいいのです。
+
+なお、Google AdSenseの場合、「非同期」のコードではうまく動かず、「同期」
+のコードを使う必要があります。なお、単純に <!-- と --> をはずして、広告
+を表示できるようにしただけだと、私のところにアフィリエイト収入が入るこ
+とになるはずですので、自分のコードを貼り付けるのを忘れないよう注意しま
+しょう。
+
+<!-- Google AdSense - Cocolog Youscout -->
+
+<div id="ad_area">
+<div id="ad_google">
+<script type="text/javascript">
+    google_ad_client = "ca-pub-0065765675450647";
+    google_ad_slot = "6210687822";
+    google_ad_width = 728;
+    google_ad_height = 90;
+</script>
+<script type="text/javascript"
+src="//pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+</div>
+
+
+■ おまけ２：アーカイブが見つからなくなったとき
+
+私がネットをやめるなど、youscout.zip や jrf_tarot.zip がネット上で見つ
+からなくなったとき、もしかすると Vector 社のアーカイブの中に残っている
+可能性があります。
+
+Google などで「JRF 私見 アーカイブ」で検索すると Vector 社のページが見
+つかるはず。シェアウェアなのでダウンロードはできるはずです。そのアーカ
+イブの中の archive/youscout/ ディレクトリに(最新版じゃないかもしれませ
+んが)あるはずです。
+
+
+
+(This file was written in Japanese/UTF8.)

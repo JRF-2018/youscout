@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Time-stamp: "2015-04-02T12:03:08Z" -->
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Language" content="ja,en" />
+
+<title>易双六 Youscout ～ a Tarot Solitaire</title>
+
+<meta name="author" content="JRF" />
+<meta name="version" content="0.24" />
+<meta name="home" content="http://jrf.cocolog-nifty.com/archive/youscout/" />
+<meta name="archive" content="http://jrf.cocolog-nifty.com/archive/youscout/youscout.zip" />
+<meta name="keywords" content="tarot,タロット,solitaire,ソリティア,易,yi-king,yi-ching,iching" />
+<meta name="description" lang="en" content="A sort of solitaire games playing with tarot cards, inspired by arguments about Yi-Ching divination." />
+<meta name="description" lang="ja" content="タロットカードを使ったソリティアの一種。易経の理論からヒントを得ている。" />
+
+<style type="text/css">
+div.main {
+  margin: 3em;
+  margin-bottom: 3em;
+}
+div.en p {
+  text-indent: 1.5em;
+}
+div.ja p {
+  text-indent: 1em;
+}
+a.game_start {
+  font-size: x-large;
+}
+span.subtitle {
+  font-size: smaller;
+}
+
+div.picture {
+  margin: 3em;
+}
+
+div.picture td {
+  padding: 0.5em;
+}
+
+span.small {
+  font-size: smaller;
+}
+
+p.ptc-ok {
+  font-size: x-large;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="main en" lang="en">
+<h1>易双六 Youscout <span class="subtitle">～ a Tarot Solitaire ～</span></h1>
+
+<p>This game is a sort of solitaire games playing with tarot cards.</p>
+
+<p>At first of the game, you spread 6 cards of shuffled 22(-2) major arcana as a game board and place freely a token on one of the 6 cards as a mark of the player.  The game proceeds by drawing a card from shuffled talon of 56 minor arcana + 1 terminal major arcana which decide the token to move or not.  At the end of the game, win depends on the place of the token.</p>
+
+<p>A drawn card and the place of the token decide which direction the token should move.  Calculation with the number table of major arcana decides wheter the token can move or not.  That is somewhat complex but you will become used to play this game with tarot cards and the number table.</p>
+
+<p>At this time, I made this game into a browser game, in order for everyone to feel rules.  In the browser game, after you place the token, you are only prompted to draw a card from the talon and sometimes to choose "move" or "stay".  Once you play through the game to "win" or "loose", you will come to know what kind of game this is.</p>
+
+<p><a class="game_start" href="youscout.html?default_lang=en">[ GAME START ]</a></p>
+
+<p>The opening of idea stood a brick wall of my study of mathematical theory of games.  I was suffered to devise a game model (maybe complex) which reflects an aspect of society.  At that time, my video game machine playing tarot accidentally became out of order.  Hesitantly, I read explanations of tarot in WWW to play tarot manually. I recollected arguments of Yi-King divination lore, and thought how to make a Yi-King divination with tarot. Then, this game naturally consisted.</p>
+
+<p>So, this game doesn't have its special history, and it must be me who designed this game by consulting Yi-King, Tarot, Sogoroku, games like "Magic: The Gathering" and etc.</p>
+
+<p>The name of this game comes from Yi-King (=易) and Sugoroku (=双六, a genre of Japanese board games).  In Japanese, "易双六" can be pronounced as "Ekisugoroku" and this can get corrupted to "Yosuko" which means Yangtze Chinese River (=揚子江).  In English, Japanese "Yosuko" doesn't sound Japanese alike. I decide the name to be "Youscout" for more English than it.</p>
+
+<p>Detailed rules are <a href="rule_book.html#manual_en">here</a>.  The number table of major arcana can be got below. In usual games, the doubled number table is used, but I put the original ×1 number table below, too.</p>
+
+<p><a href="table2.html">The number table of major arcana (×2)</a></p>
+
+<p><a href="table1.html">The number table of major arcana (×1)</a></p>
+
+<p>I put an archive of the browser game.  I distribute different versions as the same name, but I will keep original ones obtainable which are discriminated by URI.txt included in the archives.  Invoked from a local directory, your browser must block JavaScript or image loading of this program. If you want to do such a thing, you need some tricks explained somewhere else.</p>
+
+<p><a href="http://jrf.cocolog-nifty.com/archive/youscout/youscout.zip">youscout.zip</a></p>
+
+<p>On this program, instead of using Internet-default Flash, I use Canvas of new JavaScript.  It needs the latest browsers.  I developed at Firefox 8, and tested on InternetExplorer 9 and Google Chrome 15.  This program should be said in a state of alpha-version, but I have little intention to reform it without request.</p>
+
+<p>The author is JRF ( <a href="http://jrf.cocolog-nifty.com/">http://jrf.cocolog-nifty.com/</a> ).  I intended this browser game to be public-domain, but you may treat it as such under the <a href="http://www.opensource.org/licenses/bsd-license.php">BSD Licence</a>, except for the JRF Tarot. (The JRF Tarot is not included in the archives, but is archived as <a href="https://www.sugarsync.com/pf/D252372_79_6117454710">another one</a>).</p>
+
+<p>I admit that my skill of illustrations doesn't reach payable level, but, expecting improvement, I will reserve commercial rights of the pictures of the JRF Tarot.  I don't need royalty for selling software or introductory articles with parts of them. Please contact me, however, if you go mad to want to sell printed cards of the JRF Tarot commercially.</p>
+
+<p class="ptc-ok">...And NOW (2013-02-21), I am also distributing <a href="http://jrf.cocolog-nifty.com/archive/youscout/ptc/index.html">Nintendo DS's version of "Youscout"</a>!</p>
+</div>
+
+<div class="main ja" lang="ja">
+<h1>易双六【ようすこう】 <span class="subtitle">～タロット ソリティア ゲーム～</span></h1>
+
+<p>このゲームは、タロットカードを使ったソリティアの一種ということになるだろう。</p>
+
+<p>タロットカードの大アルカナ 22 枚(-2枚)をシャッフルして6 枚を引き、それを並べて盤面とし、プレイヤーのトークンを置く。シャッフルした小アルカナ56 枚(+大アルカナ一枚)を一枚づつ引いてそれ従ってトークンを移動させる。ゲーム終了時のトークンの位置で勝敗が決まる。</p>
+
+<p>引いたスートとトークン位置により移動方向が決まる。大アルカナに割り当てられた数表があり、それとにらめっこしながら計算(足し算)して、移動の成否を決める。やや複雑だが、慣れればタロットカードと数表さえ手元にあればできるようになるだろう。</p>
+
+<p>今回は誰でもルールに簡単に触れられるよう、それをブラウザゲームにしてみた。ブラウザゲームではトークン位置を決めたあとは、カードを引いていくだけで、たまに「動く」か「留まる」か選択すればよい。一度、勝ち負けが決まるまで一通りやれば雰囲気はつかめるだろう。</p>
+
+<p><a class="game_start" href="youscout.html?default_lang=ja">[ ゲームをはじめる ]</a></p>
+
+<p>そもそものアイデアは、ゲーム理論に関して考察をしていて行き詰まり、社会の一側面をとらえた一人遊びのゲームが造れないかと考えたところに発する。そんなとき、タロットもしていた TV ゲーム機の調子が悪くなり、あわてて、タロットをちゃんと自分の手でもやってみようとした。タロットカードの解説を読んでいるうちに、以前、易経のリクツを学んでいて、そのリクツをタロットに充てはめたらどうなるだろうと考えていくと、自然にこのゲームができていた。</p>
+
+<p>よってこのゲームに特に歴史があるわけではなく、易とタロットカードの意味その他(マジック・ザ・ギャザリング系のゲーム等)を参考に、私が作ったものということになる。</p>
+
+<p>このゲームの名前の由来は、易と双六を合わせたような特徴から、「易双六」と書いて日本語で読むと「えきすごろく」で、それを強くなまらせれば「ようすこう」のようにも聞こえるところから来ている。よって、英語で書くときは、揚子江の英語表記である Yangtze や Yang Zi Jiang よりも、日本語を英単語で音写して、Youscout - Tarot Solitaire などと書いたほうがよいと考えた。</p>
+
+<p>詳しいルールは<a href="http://jrf.cocolog-nifty.com/archive/youscout/rules.html">こちら</a>または<a href="rule_book.html#manual_ja">こちら</a>にある。大アルカナの数表は HTML のテーブルで書いたものを用意した。数表は普通、数表の数を２倍にしたものを使うが、何倍にするかの元となる１倍の表もリンクしておく。</a>
+
+<p><a href="table2.html">大アルカナ数表(×２)</a></p>
+
+<p><a href="table1.html">大アルカナ数表(×１)</a></p>
+
+<p>アーカイブ化したものも置いておく。違うバージョンも同じ名前で配布するが、元のアーカイブも残しておくつもりで、アーカイブの中の URI.txt にその URL が書いているはず。なお、ローカルに起動しようとすると、ブラウザが JavaScript やイメージの読み込みをブロックしてしまうようだ。その回避方法は別所の解説におまかせする。</p>
+
+<p><a href="http://jrf.cocolog-nifty.com/archive/youscout/youscout.zip">youscout.zip</a></p>
+
+<p>なお、プログラムでは、ありがちな Flash は使っていない替わりに、JavaScript の Canvas を使っている。最新のブラウザでなければ、うまく動かない。私は Firefox 8 で開発し、InternetExplorer 9、Google Chrome 15 でテストしている。αバージョンといった出来だが、特に要望がなければ、更新するつもりはあまりない。</p>
+
+<p>著者は JRF ( <a href="http://jrf.cocolog-nifty.com/">http://jrf.cocolog-nifty.com/</a> )。このブラウザゲームはパブリックドメインであるようにしたつもりだが、<a href="http://sourceforge.jp/projects/opensource/wiki/licenses%2Fnew_BSD_license">BSD ライセンス</a>下のものとして扱ってよい。</p>
+
+<p>ただし、JRF Tarot の絵については商業的権利は留保したい。(JRF Tarot は上のアーカイブには入れておらず、<a href="https://www.sugarsync.com/pf/D252372_79_6117454710">別のアーカイブ</a>にしてある。)。私の絵はお金をいただくだけのレベルに達していないだろうが、将来の上達を期して、その権利だけは留保しておきたい。ソフトや紹介記事にこの絵を商業的に使ったからと言ってロイヤルティは必要ないが、万一、奇特にも商業的にカードとして売る気がある方はぜひご一報いただきたい。</p>
+
+<p class="ptc-ok">…そして、(2013-02-21) とうとう <a href="http://jrf.cocolog-nifty.com/archive/youscout/ptc/index.html">ニンテンドー DS バージョンの『易双六』</a>も完成・配布中！</p>
+
+</div>
+
+<div class="picture" lang="ja">
+<table align="center" border="0" cellpadding="0" cellspacing="0">
+<tr><td><img id="playing" width="640" height="480" src="simplest/youscout_playing.jpg" /></td>
+<td>
+<p lang="en">Youscout being played by the author.  <br/>
+<span class="small">(Cards: <a href="http://grimpeur.co.jp/item/TAROT/GRIMPEURTAROT.html">GRIMPEUR TAROT</a>)</span></p>
+
+<p lang="ja">プレイ中の易双六。<br/>
+<span class="small">(使用カード: <a href="http://grimpeur.co.jp/item/TAROT/GRIMPEURTAROT.html">グランペール・タロット</a>)</span></p>
+</td>
+</tr>
+</table>
+</div>
+
+</body>
+</html>
