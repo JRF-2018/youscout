@@ -1,6 +1,6 @@
 # Youscout 易双六 ようすこう
 
-<!-- Time-stamp: "2020-04-06T08:28:34Z" -->
+<!-- Time-stamp: "2020-04-06T08:44:32Z" -->
 
 A sort of solitaire games playing with tarot cards, inspired by
 arguments about Yi-Ching divination.
@@ -24,7 +24,7 @@ the [BSD Licence](http://www.opensource.org/licenses/bsd-license.php),
 except for the JRF Tarot. (The JRF Tarot is not included in the
 archives, but is archived as another one on
 [SugarSync](https://www.sugarsync.com/pf/D252372_79_6117454710) or on
-[special release in
+[the special release in
 GitHub](https://github.com/JRF-2018/youscout/releases/tag/v0.30).)
 
 I admit that my skill of illustrations doesn't reach payable level,
