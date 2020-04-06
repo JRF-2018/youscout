@@ -1,6 +1,6 @@
 # Youscout 易双六 ようすこう
 
-<!-- Time-stamp: "2020-04-06T08:44:32Z" -->
+<!-- Time-stamp: "2020-04-06T08:50:14Z" -->
 
 A sort of solitaire games playing with tarot cards, inspired by
 arguments about Yi-Ching divination.
@@ -43,7 +43,7 @@ commercially.
 下のものとして扱ってよい。
 
 ただし、JRF Tarot の絵については商業的権利は留保したい。(JRF Tarot は
-上のアーカイブには入れておらず、別のアーカイブおり、
+上のアーカイブには入れておらず、別のアーカイブにしており、
 [SugarSync](https://www.sugarsync.com/pf/D252372_79_6117454710) か、[GitHub 上の特別リリー
 ス](https://github.com/JRF-2018/youscout/releases/tag/v0.30)にある。)
 私の絵はお金をいただくだけのレベルに達していないだろうが、将来の上達を
