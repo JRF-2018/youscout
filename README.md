@@ -1,6 +1,6 @@
 # Youscout 易双六 ようすこう
 
-<!-- Time-stamp: "2020-04-06T08:50:14Z" -->
+<!-- Time-stamp: "2020-04-07T04:54:11Z" -->
 
 A sort of solitaire games playing with tarot cards, inspired by
 arguments about Yi-Ching divination.
@@ -14,6 +14,11 @@ arguments about Yi-Ching divination.
 Read index.html.
 
 index.html をお読みください。
+
+
+## GitHub 登録までの略歴
+
+2011-11-09、初公開。2020-03-28、バージョン 0.30。2020-04-06、GitHub にバージョン 0.30 を初登録。
 
 
 ## License
