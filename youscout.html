@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<!-- Time-stamp: "2020-03-27T18:49:30Z" -->
+<!-- Time-stamp: "2020-04-24T02:29:20Z" -->
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -11,7 +11,7 @@
 <title>易双六 Youscout ～ Tarot Solitaire</title>
 
 <meta name="author" content="JRF" />
-<meta name="version" content="0.30" />
+<meta name="version" content="0.31" />
 <meta name="home" content="http://jrf.cocolog-nifty.com/archive/youscout/index.html" />
 <meta name="archive" content="http://jrf.cocolog-nifty.com/archive/youscout/youscout.zip" />
 <meta name="keywords" content="tarot,タロット,solitaire,ソリティア,易,yi-king,yi-ching,iching" />
@@ -310,6 +310,7 @@ var setting_default = {
 
   rule_replacement: 3,
   rule_cross_border: "cups_and_coins",
+  rule_replacement_coins_lower: 2,
 
   calc_screen: true,
 
@@ -1187,6 +1188,7 @@ var game_view = {
 <option value="1">1</option>\
 <option value="2">2</option>\
 <option value="3">3</option>\
+<option value="4">4</option>\
 <option value="5">5</option>\
 <option value="infinity">∞</option>\
 </select></td></tr>\
@@ -1194,6 +1196,15 @@ var game_view = {
 <option value="none">なし</option>\
 <option value="cups_and_coins">カップとコイン</option>\
 <option value="all">すべて</option>\
+</select></td></tr>\
+<tr><td>↓♦への戦乱置換:</td><td><select id="rule_replacement_coins_lower">\
+<option value="0">0</option>\
+<option value="1">1</option>\
+<option value="2">2</option>\
+<option value="3">3</option>\
+<option value="4">4</option>\
+<option value="5">5</option>\
+<option value="infinity">∞</option>\
 </select></td></tr>\
 <tr><td>計算時の暗転:</td><td><select id="calc_screen">\
 <option value="true">する</option>\
@@ -1256,6 +1267,14 @@ var game_view = {
 <option value="cups_and_coins">Cups and Coins</option>\
 <option value="all">All</option>\
 </select></td></tr>\
+<tr><td>War Replacement to ↓♦:</td><td><select id="rule_replacement_coins_lower">\
+<option value="0">0</option>\
+<option value="1">1</option>\
+<option value="2">2</option>\
+<option value="3">3</option>\
+<option value="5">5</option>\
+<option value="infinity">∞</option>\
+</select></td></tr>\
 <tr><td>Darkening on calculation:</td><td><select id="calc_screen">\
 <option value="true">Do it</option>\
 <option value="false">Don\'t do it</option>\
@@ -1282,6 +1301,7 @@ var game_view = {
 		 "rule_swap_8_11",
 		 "rule_replacement",
 		 "rule_cross_border",
+		 "rule_replacement_coins_lower",
 		 "calc_screen",
 		 "cards",
 		 "lang"];
@@ -1378,6 +1398,7 @@ var game_view = {
       drawn_terminals: 0,
 
       replacements: 0,
+      replacements_coins_lower: 0,
       chosen_card: null,
       chosen_place: null,
 
@@ -5316,6 +5337,7 @@ var game_view = {
       if (typeof(setting.rule_replacement) != "number"
 	  || setting.rule_replacement != 0) {
 	next.replacements = 0
+	next.replacements_coins_lower = 0
 	next.state = "choose_replacement";
       }
     } else {
@@ -5452,7 +5474,11 @@ var game_view = {
       if (setting.rule_replacement == "infinity") {
 	repl_char = "∞";
       }
-      game_view.status_window.innerHTML = L({ja: "戦乱置換 (" + cur.replacements + "/" + repl_char + ")。置換するカードを選んで下さい。置換しない場合は、山からカードを引いてください。", en: "War Replacement (" + cur.replacements + "/" + repl_char + "). Please choose a card to replace or draw a card from the talon without replacement."});
+      var repl_char2 = setting.rule_replacement_coins_lower;
+      if (setting.rule_replacement_coins_lower == "infinity") {
+	repl_char2 = "∞";
+      }
+      game_view.status_window.innerHTML = L({ja: "戦乱置換: " + cur.replacements + "/" + repl_char + " (うち↓♦へ: " + cur.replacements_coins_lower + "/" + repl_char2 + ")。置換するカードを選んで下さい。置換しない場合は、山からカードを引いてください。", en: "War Replacement: " + cur.replacements + "/" + repl_char + " (to ↓♦: " + cur.replacements_coins_lower + "/" + repl_char2 + "). Please choose a card to replace or draw a card from the talon without replacement."});
     }
   },
 
@@ -5697,6 +5723,12 @@ var game_view = {
 	  && (! (l[i].match(/^coins_/) || l[i].match(/^cups_/)))) {
 	continue;
       }
+      if (l[i] == "coins_lower"
+	  && setting.rule_replacement_coins_lower != "infinity"
+	  && (cur.replacements_coins_lower
+	      >= setting.rule_replacement_coins_lower)) {
+	continue;
+      }
       var hilit;
       var rect;
       if (l[i] == "discarded") {
@@ -5741,6 +5773,9 @@ var game_view = {
     }
     if (place != cur.chosen_place) {
       next.replacements ++;
+      if (place == "coins_lower") {
+	next.replacements_coins_lower ++;
+      }
     }
     if (typeof(setting.rule_replacement) != "number"
 	|| next.replacements < setting.rule_replacement) {
