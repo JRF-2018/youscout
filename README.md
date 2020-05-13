@@ -1,15 +1,15 @@
 # Youscout 易双六 ようすこう
 
-<!-- Time-stamp: "2020-04-07T04:54:11Z" -->
+<!-- Time-stamp: "2020-05-13T18:56:15Z" -->
 
 A sort of solitaire games playing with tarot cards, inspired by
 arguments about Yi-Ching divination.
 
 タロットカードを使ったソリティアの一種。易経の理論からヒントを得ている。
 
-[(GAME START in English)](http://hp.vector.co.jp/authors/VA058801/youscout/youscout.html?jrf_tarot=local&default_lang=en)
+[(GAME START in English)](http://hp.vector.co.jp/authors/VA058801/youscout/youscout.html?default_lang=en)
 
-[(GAME START in 日本語)](http://hp.vector.co.jp/authors/VA058801/youscout/youscout.html?jrf_tarot=local&default_lang=ja)
+[(GAME START in 日本語)](http://hp.vector.co.jp/authors/VA058801/youscout/youscout.html?default_lang=ja)
 
 Read index.html.
 
