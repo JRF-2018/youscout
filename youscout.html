@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<!-- Time-stamp: "2020-05-13T18:25:14Z" -->
+<!-- Time-stamp: "2023-03-09T09:23:33Z" -->
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -11,7 +11,7 @@
 <title>易双六 Youscout ～ Tarot Solitaire</title>
 
 <meta name="author" content="JRF" />
-<meta name="version" content="0.32" />
+<meta name="version" content="0.33" />
 <meta name="keywords" content="tarot,タロット,solitaire,ソリティア,易,yi-king,yi-ching,iching" />
 <meta name="description" lang="en" content="A sort of solitaire games playing with tarot cards, inspired by arguments about Yi-Ching divination." />
 <meta name="description" lang="ja" content="タロットカードを使ったソリティアの一種。易経の理論からヒントを得ている。" />
@@ -294,7 +294,7 @@ var CHAR_DIVISION = "|";
 var setting_default = {
   lang: LANG,
   page_help: "index.html",
-  cards: (! FORCE_DEFAULT_TAROT)? ((window.innerHeight && window.innerHeight > 768)? 'jrf_tarot_medium' : 'jrf_tarot_small_dense') : FORCE_DEFAULT_TAROT,
+  cards: (! FORCE_DEFAULT_TAROT)? ((window.innerHeight && window.innerWidth && window.innerHeight >= 1024 && window.innerWidth >= 1280)? 'jrf_tarot_medium' : 'jrf_tarot_small_dense') : FORCE_DEFAULT_TAROT,
 
   rule_terminals: 3,
   rule_court_card: "K14",
@@ -305,7 +305,7 @@ var setting_default = {
   rule_major_influence: 2,
   rule_swap_8_11: "memorial",
 
-  rule_replacement: 3,
+  rule_replacement: 0, /* 3,*/
   rule_cross_border: "cups_and_coins",
   rule_replacement_coins_lower: 2,
 
