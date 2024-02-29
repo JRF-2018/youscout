@@ -1,14 +1,15 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<!-- Time-stamp: "2024-02-29T19:03:20Z" -->
-
+<!-- Time-stamp: "2024-02-29T18:56:23Z" -->
+  <!-- 次は animate_determine_stay から -->
+  
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="Content-Script-Type" content="text/javascript" />
 <meta http-equiv="Content-Style-Type" content="text/css" />
 <meta http-equiv="Content-Language" content="ja,en" />
 
-<title>易双六 Youscout ～ Tarot Solitaire</title>
+<title>略式易双六 Simplified Youscout ～ Tarot Solitaire</title>
 
 <meta name="author" content="JRF" />
 <meta name="version" content="0.34" />
@@ -293,7 +294,7 @@ var CHAR_DIVISION = "|";
 
 var setting_default = {
   lang: LANG,
-  page_help: "index.html",
+  page_help: "index_sy.html",
   cards: (! FORCE_DEFAULT_TAROT)? ((window.innerHeight && window.innerWidth && window.innerHeight >= 1024 && window.innerWidth >= 1280)? 'jrf_tarot_medium' : 'jrf_tarot_small_dense') : FORCE_DEFAULT_TAROT,
 
   rule_terminals: 3,
@@ -303,11 +304,9 @@ var setting_default = {
   // K13b == { K: 13, Q: 12, C: 11, J: 11 },
   // K10 == { K: 10, Q: 10, C: 10, J: 10 },
   rule_major_influence: 2,
-  rule_swap_8_11: "solid",
+  rule_swap_8_11: "memorial",
 
-  rule_replacement: 0, /* 3,*/
-  rule_cross_border: "cups_and_coins",
-  rule_replacement_coins_lower: 2,
+  rule_determinant: "greater",
 
   calc_screen: true,
 
@@ -330,7 +329,7 @@ var cards_simplest = {
   card_width: 80,
   card_height: 128,
 
-  img_logo: "simplest/logo.png",
+  img_logo: "simplest/logo_sy.png",
   img_cards: "simplest/cards.png",
   img_backs: "simplest/backs.png",
   img_talon: "simplest/talon.png",
@@ -482,8 +481,8 @@ function read_setting () {
       } else if (v.match(/^false$/)) {
 	v = false;
       }
-      if (name.indexOf("youscout_", 0) == 0) {
-	name = name.substr("youscout_".length);
+      if (name.indexOf("simple_ysc_", 0) == 0) {
+	name = name.substr("simple_ysc_".length);
 	setting[name] = v;
       }
     }
@@ -507,7 +506,7 @@ function read_setting () {
 
 function set_cookie (name, value) {
   var str;
-  name = "youscout_" + name;
+  name = "simple_ysc_" + name;
   if (value !== null) {
     str = name + "=" + escape(value);
   } else {
@@ -864,6 +863,163 @@ function make_card_image(card, rotation) {
   return canvas;
 }
 
+
+function determine_stay(cur, next) {
+  var cur_cards_name = null;
+  if (cur.token >= 3) {
+    cur_cards_name = "coins_" + (cur.token + 1);
+  } else {
+    cur_cards_name = "cups_" + (cur.token + 1);
+  }
+  cur.move_or_stay = "stay";
+  next[cur_cards_name] = cur[cur_cards_name].concat([cur.drawn]);
+}
+
+function determine_move(cur, next, next_token, cards_token) {
+  var cards_name = null;
+  if (cards_token >= 3) {
+    cards_name = "coins_" + (cards_token + 1);
+  } else {
+    cards_name = "cups_" + (cards_token + 1);
+  }
+  cur.move_or_stay = "move";
+  next[cards_name] = cur[cards_name].concat([cur.drawn]);
+  next.token = next_token;
+}
+
+function determine_move_or_stay(cur, next, next_token, choice_ok) {
+  var cur_cards_name = null;
+  var next_cards_name = null;
+  if (cur.token >= 3) {
+    cur_cards_name = "coins_" + (cur.token + 1);
+  } else {
+    cur_cards_name = "cups_" + (cur.token + 1);
+  }
+  if (next_token >= 3) {
+    next_cards_name = "coins_" + (next_token + 1);
+  } else {
+    next_cards_name = "cups_" + (next_token + 1);
+  }
+
+  var m_minor_from = calc_card_score(cur.drawn);
+  var f_minor_from = read_major_arcana(cur.board[cur.token]).coin_pain;
+  var m_major_to = read_major_arcana(cur.board[next_token]).sword_offence;
+  var f_minor_to = read_major_arcana(cur.board[next_token]).coin_pain;
+
+  var cur_cards_max = -1;
+  if (cur[cur_cards_name].length > 0) {
+    var max = null;
+    var max_score = 0;
+    for (var i = 0, l = cur[cur_cards_name]; i < l.length; i++) {
+      var s = calc_card_score(l[i]);
+      if (s > max_score) {
+	max = i;
+	max_score = s;
+      }
+    }
+    cur_cards_max = max;
+    f_minor_from = max_score;
+  }
+  var next_cards_max = -1;
+  if (cur[next_cards_name].length > 0) {
+    var max = null;
+    var max_score = 0;
+    for (var i = 0, l = cur[next_cards_name]; i < l.length; i++) {
+      var s = calc_card_score(l[i]);
+      if (s > max_score) {
+	max = i;
+	max_score = s;
+      }
+    }
+    next_cards_max = max;
+    f_minor_to = max_score;
+  }
+
+  var c = true;
+  if (setting.rule_determinant == "greater_equal") {
+    c = m_minor_from + f_minor_from >= m_major_to + f_minor_to;
+  } else {
+    c = m_minor_from + f_minor_from > m_major_to + f_minor_to;
+  }
+
+  if (! c) {
+    cur.move_or_stay = "stay";
+    next.discarded = cur.discarded.concat([cur.drawn]);
+
+    if (next_cards_max != -1) {
+      var card = cur[next_cards_name][next_cards_max];
+      next[next_cards_name] = [].concat(cur[next_cards_name]);
+      next[next_cards_name].splice(next_cards_max, 1);
+      next.discarded.push(card);
+    }
+  } else {
+    if (choice_ok) {
+      cur.move_or_stay = "choose";
+      next.state = "choose_move_or_stay";
+      next.drawn = cur.drawn;
+    } else {
+      cur.move_or_stay = "move";
+      next.discarded = cur.discarded.concat([cur.drawn]);
+
+      if (cur_cards_max != -1) {
+	var card = cur[cur_cards_name][cur_cards_max];
+	next[cur_cards_name] = [].concat(cur[cur_cards_name]);
+	next[cur_cards_name].splice(cur_cards_max, 1);
+	next.discarded.push(card);
+      }
+      next.token = next_token;
+    }
+  }
+}
+
+function process_chose_move_or_stay(cur, next, next_token) {
+  var cur_cards_name = null;
+  var next_cards_name = null;
+  if (cur.token >= 3) {
+    cur_cards_name = "coins_" + (cur.token + 1);
+  } else {
+    cur_cards_name = "cups_" + (cur.token + 1);
+  }
+
+  var cur_cards_max = -1;
+  if (cur[cur_cards_name].length > 0) {
+    var max = null;
+    var max_score = 0;
+    for (var i = 0, l = cur[cur_cards_name]; i < l.length; i++) {
+      var s = calc_card_score(l[i]);
+      if (s > max_score) {
+	max = i;
+	max_score = s;
+      }
+    }
+    cur_cards_max = max;
+  }
+
+  if (cur.move_or_stay == "stay") {
+    next.discarded = cur.discarded.concat([cur.drawn]);
+  } else {
+    next.discarded = cur.discarded.concat([cur.drawn]);
+
+    if (cur_cards_max != -1) {
+      var card = cur[cur_cards_name][cur_cards_max];
+      next[cur_cards_name] = [].concat(cur[cur_cards_name]);
+      next[cur_cards_name].splice(cur_cards_max, 1);
+      next.discarded.push(card);
+    }
+    next.token = next_token;
+  }
+}
+
+function make_suit_name (card) {
+  var f = {A: L({ja: "大アルカナ", en: "major arcana"}),
+	   S: L({ja: "ソード", en: "sword"}),
+	   D: L({ja: "コイン", en: "coin"}),
+	   H: L({ja: "カップ", en: "cup"}),
+	   C: L({ja: "ワンド", en: "wand"})};
+  return f[card.substr(0, 1)];
+}
+
+
 var game_view = {
   model_cur: {state: "title"},
   model_next: null,
@@ -955,15 +1111,6 @@ var game_view = {
       break;
     case "choose_move_or_stay":
       game_view.draw_choose_move_or_stay();
-      break;
-    case "choose_replacement":
-      game_view.draw_choose_replacement();
-      break;
-    case "choose_replacement_card":
-      game_view.draw_choose_replacement_card();
-      break;
-    case "choose_replacement_place":
-      game_view.draw_choose_replacement_place();
       break;
     case "game_end":
       game_view.draw_game_end();
@@ -1176,28 +1323,9 @@ var game_view = {
 <option value="expansive">開式</option>\
 <option value="solid">固式</option>\
 </select></td></tr>\
-<tr><td>戦乱置換:</td><td><select id="rule_replacement">\
-<option value="0">しない</option>\
-<option value="1">1</option>\
-<option value="2">2</option>\
-<option value="3">3</option>\
-<option value="4">4</option>\
-<option value="5">5</option>\
-<option value="infinity">∞</option>\
-</select></td></tr>\
-<tr><td>戦乱置換の越境:</td><td><select id="rule_cross_border">\
-<option value="none">なし</option>\
-<option value="cups_and_coins">カップとコイン</option>\
-<option value="all">すべて</option>\
-</select></td></tr>\
-<tr><td>↓♦への戦乱置換:</td><td><select id="rule_replacement_coins_lower">\
-<option value="0">0</option>\
-<option value="1">1</option>\
-<option value="2">2</option>\
-<option value="3">3</option>\
-<option value="4">4</option>\
-<option value="5">5</option>\
-<option value="infinity">∞</option>\
+<tr><td>判定式:</td><td><select id="rule_determinant">\
+<option value="greater">大なり</option>\
+<option value="greater_equal">大なりイコール</option>\
 </select></td></tr>\
 <tr><td>計算時の暗転:</td><td><select id="calc_screen">\
 <option value="true">する</option>\
@@ -1247,26 +1375,9 @@ var game_view = {
 <option value="expansive">The Expansive Method</option>\
 <option value="solid">The Solid Method</option>\
 </select></td></tr>\
-<tr><td>War Replacement:</td><td><select id="rule_replacement">\
-<option value="0">None</option>\
-<option value="1">1</option>\
-<option value="2">2</option>\
-<option value="3">3</option>\
-<option value="5">5</option>\
-<option value="infinity">∞</option>\
-</select></td></tr>\
-<tr><td>Cross-Boder in War Replacement:</td><td><select id="rule_cross_border">\
-<option value="none">None</option>\
-<option value="cups_and_coins">Cups and Coins</option>\
-<option value="all">All</option>\
-</select></td></tr>\
-<tr><td>War Replacement to ↓♦:</td><td><select id="rule_replacement_coins_lower">\
-<option value="0">0</option>\
-<option value="1">1</option>\
-<option value="2">2</option>\
-<option value="3">3</option>\
-<option value="5">5</option>\
-<option value="infinity">∞</option>\
+<tr><td>Determinant:</td><td><select id="rule_determinant">\
+<option value="greater">Greater than</option>\
+<option value="greater_equal">Greater than or equal to</option>\
 </select></td></tr>\
 <tr><td>Darkening on calculation:</td><td><select id="calc_screen">\
 <option value="true">Do it</option>\
@@ -1292,9 +1403,7 @@ var game_view = {
 		 "rule_court_card",
 		 "rule_major_influence",
 		 "rule_swap_8_11",
-		 "rule_replacement",
-		 "rule_cross_border",
-		 "rule_replacement_coins_lower",
+		 "rule_determinant",
 		 "calc_screen",
 		 "cards",
 		 "lang"];
@@ -1390,8 +1499,6 @@ var game_view = {
       cups_1: [],
       drawn_terminals: 0,
 
-      replacements: 0,
-      replacements_coins_lower: 0,
       chosen_card: null,
       chosen_place: null,
 
@@ -2263,245 +2370,76 @@ var game_view = {
 	}
 	animate = game_view.animate_game_end;
       }
+      game_view.animation_temp = {prev_past: 0};
     } else if (cur.token >= 3) {
       switch (suit) {
-      case "S":
-	var right = cur.token - 1;
-	var left = (cur.token + 1) % 6;
+	case "S":
+	  var right = cur.token - 1;
+	  determine_move_or_stay(cur, next, right, false);
+	  game_view.animation_temp = {prev_past: 0,
+				      dir: "right",
+				      next_token: right, choice_ok: false};
+	  animate = game_view.animate_determine_move_or_stay;
+	  break;
 
-	var max = null;
-	var max_score = 0;
-	for (var i = 0, l = cur["coins_" + (cur.token + 1)];
-	     i < l.length; i++) {
-	  var m = calc_card_score(l[i]);
-	  if (m > max_score) {
-	    max = i;
-	    max_score = m;
-	  }
-	}
-	
-	var ma_r_score = read_major_arcana(cur.board[right]);
-	if (max_score + ma_r_score.sword_defence
-	    >  score + ma_r_score.coin_pain) {
-	  cur.move_or_stay = "move";
-	  next["swords_upper"]
-	    = cur["swords_upper"].concat([cur.drawn]);
-	  next.token = right;
-	} else {
-	  cur.move_or_stay = "stay";
-	  next.discarded = cur.discarded.concat([cur.drawn]);
-	  if (max != null) {
-	    var card = cur["coins_" + (cur.token + 1)][max];
-	    next["coins_" + (cur.token + 1)]
-	      = [].concat(cur["coins_" + (cur.token + 1)]);
-	    next["coins_" + (cur.token + 1)].splice(max, 1);
-	    var coins = "coins_lower";
-	    if (left != 0) {
-	      coins = "coins_" + (left + 1);
-	    }
-	    next[coins] = cur[coins].concat([card]);
-	  }
-	}
+	case "D":
+	  determine_stay(cur, next);
+	  game_view.animation_temp = {prev_past: 0};
+	  animate = game_view.animate_determine_stay;
+	  break;
 
-	animate = game_view.animate_upper_sword;
-	break;
+	case "H":
+	  var left = (cur.token + 1) % 6;
+	  var lower = cur.token - 3;
+	  game_view.animation_temp = {prev_past: 0,
+				      next_token: left, cards_token: lower};
+	  determine_move(cur, next, left, lower);
+	  animate = game_view.animate_determine_move;
+	  break;
 
-      case "D":
-	cur.move_or_stay = "stay";
-	next["coins_" + (cur.token + 1)]
-	  = cur["coins_" + (cur.token + 1)].concat([cur.drawn]);
-	animate = game_view.animate_upper_coin;
-	break;
-
-      case "H":
-	var left = (cur.token + 1) % 6;
-	var lower = cur.token - 3;
-
-	var ma_score = read_major_arcana(cur.board[cur.token]);
-	var ma_l_score = read_major_arcana(cur.board[left]);
-
-	if (score + ma_score.cup_upper > ma_l_score.wand_upper) {
-	  cur.move_or_stay = "move";
-	  next.token = left;
-	} else {
-	  cur.move_or_stay = "stay";
-	}
-	next["cups_" + (lower + 1)] = cur["cups_" + (lower + 1)]
-	  .concat([cur.drawn]);
-
-	animate = game_view.animate_upper_cup;
-	break;
-
-      case "C":
-	var lower = cur.token - 3;
-
-	var ma_score = read_major_arcana(cur.board[cur.token]);
-	var ma_l_score = read_major_arcana(cur.board[lower]);
-
-	var max = null;
-	var max_score = 0;
-	for (var i = 0; i < cur["cups_" + (lower + 1)].length; i++) {
-	  var sc = calc_card_score(cur["cups_" + (lower + 1)][i]);
-	  if (sc > max_score) {
-	    max = i;
-	    max_score = sc;
-	  }
-	}
-
-	var max_c = null;
-	var max_c_score = 0;
-	var sum_c = 0;
-	for (var i = 0; i < cur["coins_" + (cur.token + 1)].length; i++) {
-	  var sc = calc_card_score(cur["coins_" + (cur.token + 1)][i]);
-	  sum_c += sc;
-	  if (sc > max_c_score) {
-	    max_c = i;
-	    max_c_score = sc;
-	  }
-	}
-
-	if (max != null
-	    && (score + ma_score.wand_upper + max_score + ma_l_score.cup_lower
-		> sum_c + ma_score.coin_gain)) {
-	  cur.move_or_stay = "move";
-	  next.token = lower;
-	  next.discarded 
-	    = cur.discarded.concat([cur.drawn,
-				    cur["cups_" + (lower + 1)][max]]);
-	  next["cups_" + (lower + 1)]
-	    = [].concat(cur["cups_" + (lower + 1)]);
-	  next["cups_" + (lower + 1)].splice(max, 1);
-	} else {
-	  cur.move_or_stay = "stay";
-	  next.discarded
-	    = cur.discarded.concat([cur.drawn]);
-	  if (max_c != null) {
-	    next.coins_lower
-	      = cur.coins_lower.concat(cur["coins_" + (cur.token + 1)][max_c]);
-	    next["coins_" + (cur.token + 1)] 
-	      = [].concat(next["coins_" + (cur.token + 1)]);
-	    next["coins_" + (cur.token + 1)].splice(max_c, 1);
-	  }
-	}
-
-	animate = game_view.animate_upper_wand;
-	break;
+	case "C":
+	  var lower = cur.token - 3;
+	  determine_move_or_stay(cur, next, lower, false);
+	  game_view.animation_temp = {prev_past: 0,
+				      dir: "lower",
+				      next_token: lower, choice_ok: false};
+	  animate = game_view.animate_determine_move_or_stay;
+	  break;
       }
     } else {
       switch (suit) {
-      case "S":
-	var upper = cur.token + 3;
+	case "S":
+	  var upper = cur.token + 3;
+	  determine_move_or_stay(cur, next, upper, true);
+	  game_view.animation_temp = {prev_past: 0,
+				      dir: "upper",
+				      next_token: upper, choice_ok: true};
+	  animate = game_view.animate_determine_move_or_stay;
+	  break;
 
-	var sum_su = 0;
-	var sum_cl = 0;
-	var sum_cu = 0;
+	case "D":
+	  var left = cur.token + 1;
+	  var upper = cur.token + 3;
+	  game_view.animation_temp = {prev_past: 0,
+				      next_token: left, cards_token: upper};
+	  determine_move(cur, next, left, upper);
+	  animate = game_view.animate_determine_move;
+	  break;
 
-	for (var i = 0, l = cur.swords_upper; i < l.length; i++) {
-	  sum_su += calc_card_score(l[i]);
-	}
-	for (var i = 0, l = cur.coins_lower; i < l.length; i++) {
-	  sum_cl += calc_card_score(l[i]);
-	}
-	for (var i = 0, l = cur["coins_" + (upper + 1)];
-	     i < l.length; i++) {
-	  sum_cu += calc_card_score(l[i]);
-	}
+	case "H":
+	  determine_stay(cur, next);
+	  game_view.animation_temp = {prev_past: 0};
+	  animate = game_view.animate_determine_stay;
+	  break;
 
-	var max = null;
-	var max_score = 0;
-	for (var i = 0, l = cur["cups_" + (cur.token + 1)];
-	     i < l.length; i++) {
-	  var s = calc_card_score(l[i]);
-	  if (s > max_score) {
-	    max = i;
-	    max_score = s;
-	  }
-	}
-	
-	var ma_score = read_major_arcana(cur.board[cur.token]);
-	var ma_u_score = read_major_arcana(cur.board[upper]);
-	if (score + ma_score.sword_offence + sum_cl
-	    > ma_u_score.sword_defence + sum_su + sum_cu) {
-	  cur.move_or_stay = "choose";
-	  next.state = "choose_move_or_stay";
-	  next.drawn = cur.drawn;
-	} else {
-	  cur.move_or_stay = "stay";
-	  next.discarded = cur.discarded.concat([cur.drawn]); 
-
-	  if (max != null) {
-	    var card = cur["cups_" + (cur.token + 1)][max];
-	    next["cups_" + (cur.token + 1)]
-	      = [].concat(cur["cups_" + (cur.token + 1)]);
-	    next["cups_" + (cur.token + 1)].splice(max, 1);
-	    next.discarded.push(card);
-	  }
-	}
-
-	animate = game_view.animate_lower_sword;
-	break;
-
-      case "D":
-	var left = cur.token + 1;
-	var upper = cur.token + 3;
-	
-	var ma_score = read_major_arcana(cur.board[cur.token]);
-	var ma_l_score = read_major_arcana(cur.board[left]);
-	if (score + ma_score.coin_pain > ma_l_score.coin_gain) {
-	  cur.move_or_stay = "move";
-	  next["coins_" + (upper + 1)]
-	    = cur["coins_" + (upper + 1)].concat([cur.drawn]);
-	  next.token = left;
-	} else {
-	  cur.move_or_stay = "stay";
-	  next.coins_lower = cur.coins_lower.concat([cur.drawn]);
-	}
-
-	animate = game_view.animate_lower_coin;
-	break;
-
-      case "H":
-	next["cups_" + (cur.token + 1)]
-	  = cur["cups_" + (cur.token + 1)].concat([cur.drawn]);
-	cur.move_or_stay = "stay";
-
-	animate = game_view.animate_lower_cup;
-	break;
-
-      case "C":
-	var right = (cur.token -1 + 6) % 6;
-
-	var ma_score = read_major_arcana(cur.board[cur.token]);
-	var ma_r_score = read_major_arcana(cur.board[right]);
-
-	var min = null;
-	var min_score = 15;
-	
-	for (var i = 0; i < cur["cups_" + (cur.token + 1)].length; i++) {
-	  var sc = calc_card_score(cur["cups_" + (cur.token + 1)][i]);
-	  if (score + ma_score.wand_lower > sc + ma_r_score.cup_lower) {
-	    if (sc < min_score) {
-	      min = i;
-	      min_score = sc;
-	    }
-	  }
-	}
-	if (min != null) {
-	  cur.move_or_stay = "move";
-	  next.token = right;
-	  next.discarded
-	    = cur.discarded.concat([cur.drawn],
-				   cur["cups_" + (cur.token + 1)][min]);
-	  next["cups_" + (cur.token + 1)]
-	    = [].concat(cur["cups_" + (cur.token + 1)]);
-	  next["cups_" + (cur.token + 1)].splice(min, 1);
-	} else {
-	  cur.move_or_stay = "stay";
-	  next.discarded = cur.discarded.concat([cur.drawn]);
-	}
-
-	animate = game_view.animate_lower_wand;
-	break;
+	case "C":
+	  var right = (cur.token -1 + 6) % 6;
+	  determine_move_or_stay(cur, next, right, false);
+	  game_view.animation_temp = {prev_past: 0,
+				      dir: "right",
+				      next_token: right, choice_ok: false};
+	  animate = game_view.animate_determine_move_or_stay;
+	  break;
       }
     }
     
@@ -2515,7 +2453,6 @@ var game_view = {
     game_view.controller_click_array = [c];
     game_view.controller_move_array = [];
 
-    game_view.animation_temp = {prev_past: 0};
     game_view.lf.set_animation(animate);
   },
 
@@ -2690,7 +2627,7 @@ var game_view = {
     return false;
   },
 
-  animate_upper_sword : function (time) {
+  animate_determine_stay : function (time) {
     var cur = game_view.model_cur;
     var temp = game_view.animation_temp;
     var ctx = game_view.pane_animation.getContext('2d');
@@ -2699,374 +2636,17 @@ var game_view = {
     var past = 0;
     var scene;
 
-    if (temp.prev_past == 0) {
-      temp.img_drawn = make_card_image(cur.drawn, 0);
-    }
+    var trigram_name = (cur.token >= 3)?
+	L({ja: "上卦", en: "upper trigram"}) :
+	L({ja: "下卦", en: "lower trigram"});
+    var suit_name = make_suit_name(cur.drawn);
 
-    scene = 1000;
-    if (time <= past + scene) {
-      var img = temp.img_drawn;
-      var r = Math.floor(((time - past) / scene) * 5);
-      var img2 = make_card_image("B" + r, 0);
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.drawImage(img2, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "上卦でソードのカードを引きました。<br/>逆方向の比爻に動くか否かを計算します。", en: "You drew a sword card on upper trigram.<br/>Calculate wheter the token must move right or not."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past && setting.calc_screen) {
-      game_view.draw_screen();
-    }
-
-    var score = calc_card_score(cur.drawn);
-    var right = cur.token - 1;
-    var left = (cur.token + 1) % 6;
-
-    var max = null;
-    var max_score = 0;
-    for (var i = 0, l = cur["coins_" + (cur.token + 1)];
-	 i < l.length; i++) {
-      var sc = calc_card_score(l[i]);
-      if (sc > max_score) {
-	max = i;
-	max_score = sc;
-      }
-    }
-    var ma_r_score = read_major_arcana(cur.board[right]);
-    var ma_r = cur.board[right];
-
-    scene = 1000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "Max(@♦) + (→A)[♠守] &gt; $♠ + (→A)[♦苦]?", en: "Max(@♦) + (→A)[♠defence] &gt; $♠ + (→A)[♦pain]?"});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    ctx.font = setting.dialog_window_font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-
-    if (! temp.minor_rect1) {
-      var l = cur["coins_" + (cur.token + 1)];
-      var img;
-      if (l && l.length > 0) {
-	img = make_cards_image(l);
-      } else {
-	img = temp.img_drawn;
-      }
-      temp.minor_rect1 = calc_minor_rect("coins_" + (cur.token + 1), img);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + max_score + "(= Max(@♦))</em> + (→A)[♠守] &gt; $♠ + (→A)[♦苦]? ", en: "<em>" + max_score + "(= Max(@♦))</em> + (→A)[♠defence] &gt; $♠ + (→A)[♦pain]?"});
-      var anchor = {x: Math.floor((temp.minor_rect1.x
-				   + temp.minor_rect1.width / 2)),
-		    y: Math.floor((temp.minor_rect1.y
-				   + temp.minor_rect1.height / 2))};
-      if (max != null) {
-	var img = make_card_image(cur["coins_" + (cur.token + 1)][max], 0);
-
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      var text = max_score;
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + max_score + "(= Max(@♦)) + <em>" + ma_r_score.sword_defence + "(= (→A)[♠守])</em> &gt;  $♠ + (→A)[♦苦]? ", en: "" + max_score + "(= Max(@♦)) + <em>" + ma_r_score.sword_defence + "(= (→A)[♠defence])</em> &gt; $♠ + (→A)[♦pain]?"});
-      var img = make_card_image(ma_r.card,
-				(ma_r.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (right + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma_r);
-      if (time - past > 1000) {
-	text = "♠ /" + ma_r_score.sword_defence;
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + max_score + "(= Max(@♦)) + " + ma_r_score.sword_defence + "(= (→A)[♠守]) &gt; <em>" + score + "(= $♠)</em> +  (→A)[♦苦]? ", en: "" + max_score + "(= Max(@♦)) + " + ma_r_score.sword_defence + "(= (→A)[♠defence]) &gt; <em>" + score + "(= $♠)</em> + (→A)[♦pain]?"});
-
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + max_score + "(= Max(@♦)) + " + ma_r_score.sword_defence + "(= (→A)[♠守]) &gt; " + score + "(= $♠) + <em>" + ma_r_score.coin_pain + "(= (→A)[♦苦])</em>? ", en: "" + max_score + "(= Max(@♦)) + " + ma_r_score.sword_defence + "(= (→A)[♠defence]) &gt; " + score + "(= $♠) + <em>" + ma_r_score.coin_pain + "(= (→A)[♦pain])</em>?"});
-      var img = make_card_image(ma_r.card,
-				(ma_r.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (right + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma_r);
-      if (time - past > 1000) {
-	text = "♦" + ma_r_score.coin_pain + "| ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      game_view.clear_screen();
-    }
-
-    if (cur.move_or_stay == "move") {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (max_score + ma_r_score.sword_defence) + "(= Max(@♦) + (→A)[♠守]) &gt; " + (score + ma_r_score.coin_pain) + "(= $♠ + (→A)[♦苦])? <br/>→ <em>大なり。動く。</em>", en: "" + (max_score + ma_r_score.sword_defence) + "(= Max(@♦) + (→A)[♠defence]) &gt; " + (score + ma_r_score.coin_pain) + "(= (←A)$♠ + (→A)[♦pain])? <br/>→ <em>Yes, MOVE.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	var img = game_view.img_token;
-	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (right + 1)];
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r
-			   + setting.card_width * 0.7 * Math.sin(Math.PI * r));
-	var y = Math.floor(begin.y + (end.y - begin.y) * r
-			   - setting.card_height * 0.7 * Math.sin(Math.PI * r));
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (right + 1)];
-	ctx2.drawImage(img,
-		       Math.floor(anchor.x - img.width / 2),
-		       Math.floor(anchor.y - img.height / 2));
-      }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      if (! temp.minor_rect2) {
-	var l = cur["swords_upper"];
-	var img;
-	if (l && l.length > 0) {
-	  img = make_cards_image(l);
-	} else {
-	  img = temp.img_drawn;
-	}
-	temp.minor_rect2 = calc_minor_rect("swords_upper", img);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは上卦のソードのスペースへ。", en: "Place the drawn card onto the upper sword space."});
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = {x: temp.minor_rect2.x + temp.minor_rect2.width / 2,
-		   y: temp.minor_rect2.y + temp.minor_rect2.height / 2};
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
+    var cur_cards_name = null;
+    if (cur.token >= 3) {
+      cur_cards_name = "coins_" + (cur.token + 1);
     } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (max_score + ma_r_score.sword_defence) + "(= Max(@♦) + (→A)[♠守]) &gt; " + (score + ma_r_score.coin_pain) + "(= $♠ + (→A)[♦苦])? <br/>→ <em>小なり。留まる。</em>", en: "" + (max_score + ma_r_score.sword_defence) + "(= Max(@♦) + (→A)[♠defence]) &gt; " + (score + ma_r_score.coin_pain) + "(= (←A)$♠ + (→A)[♦pain])? <br/>→ <em>No, STAY.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      var coins = "coins_lower";
-      if (left != 0) {
-	coins = "coins_" + (left + 1);
-      }
-
-      if (! temp.minor_rect2) {
-	var img;
-	if (cur[coins].length > 0) {
-	  img = make_cards_image(cur[coins]);
-	} else {
-	  img = temp.img_drawn;
-	}
-	temp.minor_rect2 = calc_minor_rect(coins, img);
-      }
-
-      if (temp.prev_past <= past) {
-	if (max != null) {
-	  temp.max_card = cur["coins_" + (cur.token + 1)][max];
-	  temp.img_max = make_card_image(temp.max_card, 0);
-	}
-	cur["coins_" + (cur.token + 1)] = game_view.model_next["coins_" + (cur.token + 1)];
-	game_view.draw_minor();
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "現在爻の最大のコインのカードを順方向の比爻(上爻のときは下卦のコインのスペース)へ。", en: "Place the max coin card of the current place onto the left place (or onto the lower coin space when at the top place)."});
-	if (temp.img_max) {
-	  var img = temp.img_max;
-	  var begin = {x: temp.minor_rect1.x + temp.minor_rect1.width / 2,
-		       y: temp.minor_rect1.y + temp.minor_rect1.height / 2};
-	  var end = {x: temp.minor_rect2.x + temp.minor_rect2.width / 2,
-		     y: temp.minor_rect2.y + temp.minor_rect2.height / 2};
-
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	cur[coins] = game_view.model_next[coins];
-	game_view.draw_minor();
-      }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは捨てます。", en: "Place the drawn card onto the upper place."});
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = game_view.anchor_discarded;
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
+      cur_cards_name = "cups_" + (cur.token + 1);
     }
-    
-    game_view.redraw();
-    return false;
-  },
-
-  animate_upper_coin : function (time) {
-    var cur = game_view.model_cur;
-    var temp = game_view.animation_temp;
-    var ctx = game_view.pane_animation.getContext('2d');
-    ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-    game_view.status_window.innerHTML = "";
-    var past = 0;
-    var scene;
 
     if (temp.prev_past == 0) {
       temp.img_drawn = make_card_image(cur.drawn, 0);
@@ -3099,21 +2679,21 @@ var game_view = {
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "上卦でコインのカードを引きました。<br/>トークンは留まります。", en: "You drew a coin card on upper trigram.<br/>The token must stay."});
+      game_view.status_window.innerHTML = L({ja: trigram_name + "で" + suit_name + "のカードを引きました。<br/>トークンは留まります。", en: "You drew a " + suit_name + " card on " + trigram_name + ".<br/>The token must stay."});
       temp.prev_past = time;
       return true;
     }
     past += scene;
 
     if (! temp.minor_rect) {
-      var l = cur["coins_" + (cur.token + 1)];
+      var l = cur[cur_cards_name];
       var img;
       if (l && l.length > 0) {
 	img = make_cards_image(l);
       } else {
 	img = temp.img_drawn;
       }
-      temp.minor_rect = calc_minor_rect("coins_" + (cur.token + 1), img);
+      temp.minor_rect = calc_minor_rect(cur_cards_name, img);
     }
 
     if (temp.prev_past <= past) {
@@ -3123,7 +2703,7 @@ var game_view = {
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "引いたカードは現在爻のコインとします。", en: "Place the drawn coin card onto the current place."});
+      game_view.status_window.innerHTML = L({ja: "引いたカードは現在爻の" + suit_name + "とします。", en: "Place the drawn " + suit_name + " card onto the current place."});
       var img = temp.img_drawn;
       var begin = game_view.anchor_talon;
       var end = {x: temp.minor_rect.x + temp.minor_rect.width / 2,
@@ -3145,7 +2725,7 @@ var game_view = {
     return false;
   },
 
-  animate_upper_cup : function (time) {
+  animate_determine_move : function (time) {
     var cur = game_view.model_cur;
     var temp = game_view.animation_temp;
     var ctx = game_view.pane_animation.getContext('2d');
@@ -3153,6 +2733,24 @@ var game_view = {
     game_view.status_window.innerHTML = "";
     var past = 0;
     var scene;
+
+    var next_token = temp.next_token;
+    var cards_token = temp.cards_token;
+
+    var trigram_name = (cur.token >= 3)?
+	L({ja: "上卦", en: "upper trigram"}) :
+	L({ja: "下卦", en: "lower trigram"});
+    var suit_name = make_suit_name(cur.drawn);
+    var cards_place_name = (cards_token >= 3)?
+	L({ja: "応爻", en: "upper trigram"}) :
+	L({ja: "応爻", en: "lower trigram"});
+
+    var cards_name = null;
+    if (cards_token >= 3) {
+      cards_name = "coins_" + (cards_token + 1);
+    } else {
+      cards_name = "cups_" + (cards_token + 1);
+    }
 
     if (temp.prev_past == 0) {
       temp.img_drawn = make_card_image(cur.drawn, 0);
@@ -3185,140 +2783,28 @@ var game_view = {
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "上卦でカップのカードを引きました。<br/>順方向の比爻に動くか否かを計算します。", en: "You drew a cup card on upper trigram.<br/>Calculate wheter the token can move left or not."});
+      game_view.status_window.innerHTML = L({ja: trigram_name + "で" + suit_name + "のカードを引きました。<br/>順方向の比爻に動きます。", en: "You drew a " + suit_name + " card on " + trigram_name + ".<br/>Move left."});
       temp.prev_past = time;
       return true;
     }
     past += scene;
-
-    if (temp.prev_past <= past && setting.calc_screen) {
-      game_view.draw_screen();
-    }
-
-    var score = calc_card_score(cur.drawn);
-    var left = (cur.token + 1) % 6;
-    var lower = cur.token - 3;
-
-    var ma_score = read_major_arcana(cur.board[cur.token]);
-    var ma_l_score = read_major_arcana(cur.board[left]);
-
-    var ma = cur.board[cur.token];
-    var ma_l = cur.board[left];
-
-    scene = 1000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "$♥ + (@A)[♥上流] &gt; (←A)[♣上流]?", en: "$♥ + (@A)[♥upper] &gt; (←A)[♣upper]?"});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    ctx.font = setting.dialog_window_font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
 
     if (temp.prev_past <= past) {
-      if (cur["cups_" + (lower + 1)].length > 0) {
-	temp.img_cups_lower = make_cards_image(cur["cups_" + (lower + 1)]);
-	temp.rect_cups_lower
-	  = calc_minor_rect("cups_" + (lower + 1), temp.img_cups_lower);
+      if (cur[cards_name].length > 0) {
+	temp.img_cards = make_cards_image(cur[cards_name]);
+	temp.rect_cards
+	  = calc_minor_rect(cards_name, temp.img_cards);
       } else {
-	temp.rect_cups_lower
-	  = calc_minor_rect("cups_" + (lower + 1), temp.img_drawn);
+	temp.rect_cards
+	  = calc_minor_rect(cards_name, temp.img_drawn);
       }
     }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + score + "(= $♥)</em> + (@A)[♥上流] &gt; (←A)[♣上流]?", en: "<em>" + score + "(= $♥)</em> + (@A)[♥upper] &gt; (←A)[♣upper]?"});
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♥) + <em>" + ma_score.cup_upper + "(= (@A)[♥上流])</em> &gt; (←A)[♣上流]?", en: "" + score + "(= $♥) + <em>" + ma_score.cup_upper + "(= (@A)[♥upper])</em> &gt; (←A)[♣upper]?"});
-      var img = make_card_image(ma.card,
-				(ma.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♥" + ma_score.cup_upper + "∽ ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♥) + " + ma_score.cup_upper + "(= (@A)[♥上流]) &gt; <em>" + ma_l_score.wand_upper + "(= (←A)[♣上流])</em>?", en: "" + score + "(= $♥) + " + ma_score.cup_upper + "(= (@A)[♥upper]) &gt; <em>" + ma_l_score.wand_upper + "(= (←A)[♣upper])</em>?"});
-      var img = make_card_image(ma_l.card,
-				(ma_l.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (left + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♣" + ma_l_score.wand_upper + "∽ ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
 
     if (temp.prev_past <= past) {
       game_view.clear_screen();
     }
 
-    if (cur.move_or_stay == "move") {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.cup_upper) + "(= $♥ + (@A)[♥上流]) &gt; " + ma_l_score.wand_upper + "(= (←A)[♣上流])?<br/>→ <em>大なり。動く。</em>", en: "" + (score + ma_score.cup_upper) + "(= $♥ + (@A)[♥upper]) &gt; " + ma_l_score.wand_upper + "(= (←A)[♣upper])?<br/>→ <em>Yes, MOVE.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
+    if (1) {
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_token.getContext('2d');
 	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
@@ -3328,7 +2814,7 @@ var game_view = {
       if (time <= past + scene) {
 	var img = game_view.img_token;
 	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (left + 1)];
+	var end = game_view["anchor_" + (next_token + 1)];
 
         var r = (time - past) / scene;
 	var x = Math.floor(begin.x + (end.x - begin.x) * r
@@ -3346,7 +2832,7 @@ var game_view = {
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_token.getContext('2d');
 	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (left + 1)];
+	var anchor = game_view["anchor_" + (next_token + 1)];
 	ctx2.drawImage(img,
 		       Math.floor(anchor.x - img.width / 2),
 		       Math.floor(anchor.y - img.height / 2));
@@ -3359,43 +2845,11 @@ var game_view = {
 
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは応爻のカップとします。", en: "Place the drawn cup card onto the lower place."});
+	game_view.status_window.innerHTML = L({ja: "引いたカードは" + cards_place_name + "の" + suit_name + "とします。", en: "Place the drawn " + suit_name + " card onto the " + cards_place_name + "."});
 	var img = temp.img_drawn;
 	var begin = game_view.anchor_talon;
-	var end = {x: temp.rect_cups_lower.x + temp.rect_cups_lower.width / 2,
-		   y: temp.rect_cups_lower.y + temp.rect_cups_lower.height / 2};
-	var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-    } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.cup_upper) + "(= $♥ + (@A)[♥上流]) &gt; " + ma_l_score.wand_upper + "(= (←A)[♣上流])?<br/>→ <em>小なり。留まる。</em>", en: "" + (score + ma_score.cup_upper) + "(= $♥ + (@A)[♥upper]) &gt; " + ma_l_score.wand_upper + "(= (←A)[♣upper])?<br/>→ <em>No, STAY.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは応爻のカップとします。", en: "Place the drawn cup card onto the lower place."});
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = {x: temp.rect_cups_lower.x + temp.rect_cups_lower.width / 2,
-		   y: temp.rect_cups_lower.y + temp.rect_cups_lower.height / 2};
+	var end = {x: temp.rect_cards.x + temp.rect_cards.width / 2,
+		   y: temp.rect_cards.y + temp.rect_cards.height / 2};
 	var r = (time - past) / scene;
 	var x = Math.floor(begin.x + (end.x - begin.x) * r);
 	var y = Math.floor(begin.y + (end.y - begin.y) * r);
@@ -3413,7 +2867,7 @@ var game_view = {
     return false;
   },
 
-  animate_upper_wand : function (time) {
+  animate_determine_move_or_stay : function (time) {
     var cur = game_view.model_cur;
     var temp = game_view.animation_temp;
     var ctx = game_view.pane_animation.getContext('2d');
@@ -3422,6 +2876,74 @@ var game_view = {
     var past = 0;
     var scene;
 
+    var next_token = temp.next_token;
+    var direction = temp.dir;
+    var choice_ok = temp.choice_ok;
+    
+    var trigram_name = (cur.token >= 3)?
+	L({ja: "上卦", en: "upper trigram"}) :
+	L({ja: "下卦", en: "lower trigram"});
+    var suit_name = make_suit_name(cur.drawn);
+    var f = {right: L({ja: "右", en: "right"}),
+	     upper: L({ja: "上", en: "upper"}),
+	     lower: L({ja: "下", en: "lower"})};
+    var dir_name = f[direction];
+    var greater_name = "&gt;";
+    if (setting.rule_determinant == "greater_equal") {
+      greater_name = "&gt;=";
+    }
+
+    var cur_cards_name = null;
+    var next_cards_name = null;
+    if (cur.token >= 3) {
+      cur_cards_name = "coins_" + (cur.token + 1);
+    } else {
+      cur_cards_name = "cups_" + (cur.token + 1);
+    }
+    if (next_token >= 3) {
+      next_cards_name = "coins_" + (next_token + 1);
+    } else {
+      next_cards_name = "cups_" + (next_token + 1);
+    }
+
+    var m_minor_from = calc_card_score(cur.drawn);
+    var f_minor_from = read_major_arcana(cur.board[cur.token]).coin_pain;
+    var m_major_to = read_major_arcana(cur.board[next_token]).sword_offence;
+    var f_minor_to = read_major_arcana(cur.board[next_token]).coin_pain;
+
+    var cur_cards_max = -1;
+    if (cur[cur_cards_name].length > 0) {
+      var max = null;
+      var max_score = 0;
+      for (var i = 0, l = cur[cur_cards_name]; i < l.length; i++) {
+	var s = calc_card_score(l[i]);
+	if (s > max_score) {
+	  max = i;
+	  max_score = s;
+	}
+      }
+      cur_cards_max = max;
+      f_minor_from = max_score;
+    }
+    var next_cards_max = -1;
+    if (cur[next_cards_name].length > 0) {
+      var max = null;
+      var max_score = 0;
+      for (var i = 0, l = cur[next_cards_name]; i < l.length; i++) {
+	var s = calc_card_score(l[i]);
+	if (s > max_score) {
+	  max = i;
+	  max_score = s;
+	}
+      }
+      next_cards_max = max;
+      f_minor_to = max_score;
+    }
+
+    var ma = cur.board[cur.token];
+    var ma_n = cur.board[next_token];
+
+    
     if (temp.prev_past == 0) {
       temp.img_drawn = make_card_image(cur.drawn, 0);
     }
@@ -3453,7 +2975,7 @@ var game_view = {
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "上卦でワンドのカードを引きました。<br/>応爻に動くか否かを計算します。", en: "You drew a wand card on upper trigram.<br/>Calculate whether the token can move lower or not."});
+      game_view.status_window.innerHTML = L({ja: trigram_name + "で" + suit_name + "のカードを引きました。<br/>" + dir_name + "に動くか否かを計算します。", en: "You drew a " + suit_name + " card on " + trigram_name +".<br/>Calculate whether the token can move " + dir_name + " or not."});
       temp.prev_past = time;
       return true;
     }
@@ -3463,40 +2985,9 @@ var game_view = {
       game_view.draw_screen();
     }
 
-    var score = calc_card_score(cur.drawn);
-    var lower = cur.token - 3;
-
-    var ma_score = read_major_arcana(cur.board[cur.token]);
-    var ma_l_score = read_major_arcana(cur.board[lower]);
-
-    var max = null;
-    var max_score = 0;
-    for (var i = 0; i < cur["cups_" + (lower + 1)].length; i++) {
-      var sc = calc_card_score(cur["cups_" + (lower + 1)][i]);
-      if (sc > max_score) {
-	max = i;
-	max_score = sc;
-      }
-    }
-
-    var max_c = null;
-    var max_c_score = 0;
-    var sum_c = 0;
-    for (var i = 0; i < cur["coins_" + (cur.token + 1)].length; i++) {
-      var sc = calc_card_score(cur["coins_" + (cur.token + 1)][i]);
-      sum_c += sc;
-      if (sc > max_c_score) {
-	max_c = i;
-	max_c_score = sc;
-      }
-    }
-
-    var ma = cur.board[cur.token];
-    var ma_l = cur.board[lower];
-
     scene = 1000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "$♣ + (@A)[♣上流] + Max(↓♥(要)) + (↓A)[♥下流] &gt; Sum(@♦) + (@A)[♦喜]?", en: "$♣ + (@A)[♣upper] + Max(↓♥(need)) + (↓A)[♥lower] &gt; Sum(@♦) + (@A)[♦gain]?"});
+      game_view.status_window.innerHTML = "M Minor From + F Minor From " + greater_name + " M Major To + F Minor To ?";
       temp.prev_past = time;
       return true;
     }
@@ -3509,35 +3000,27 @@ var game_view = {
     ctx.strokeStyle = 'black';
 
     if (temp.prev_past <= past) {
-      if (cur["cups_" + (lower + 1)].length > 0) {
-	temp.img_cups_lower = make_cards_image(cur["cups_" + (lower + 1)]);
-	temp.rect_cups_lower
-	  = calc_minor_rect("cups_" + (lower + 1), temp.img_cups_lower);
+      if (cur[cur_cards_name].length > 0) {
+	temp.img_cur_cards = make_cards_image(cur[cur_cards_name]);
+	temp.rect_cur_cards
+	  = calc_minor_rect(cur_cards_name, temp.img_cur_cards);
       } else {
-	temp.rect_cups_lower
-	  = calc_minor_rect("cups_" + (lower + 1), temp.img_drawn);
+	temp.rect_cur_cards
+	  = calc_minor_rect(cur_cards_name, temp.img_drawn);
       }
-      if (cur["coins_" + (cur.token + 1)].length > 0) {
-	temp.img_coins = make_cards_image(cur["coins_" + (cur.token + 1)]);
-	temp.rect_coins
-	  = calc_minor_rect("coins_" + (cur.token + 1), temp.img_coins);
+      if (cur[next_cards_name].length > 0) {
+	temp.img_next_cards = make_cards_image(cur[next_cards_name]);
+	temp.rect_next_cards
+	  = calc_minor_rect(next_cards_name, temp.img_next_cards);
       } else {
-	temp.rect_coins
-	  = calc_minor_rect("coins_" + (cur.token + 1), temp.img_drawn);
-      }
-      if (cur.coins_lower.length > 0) {
-	temp.img_coins_lower = make_cards_image(cur.coins_lower);
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_coins_lower);
-      } else {
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_drawn);
+	temp.rect_next_cards
+	  = calc_minor_rect(next_cards_name, temp.img_drawn);
       }
     }
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + score + "(= $♣)</em> + (@A)[♣上流] + Max(↓♥(要)) + (↓A)[♥下流] &gt; Sum(@♦) + (@A)[♦喜]?", en: "<em>" + score + "(= $♣)</em> + (@A)[♣upper] + Max(↓♥(need)) + (↓A)[♥lower] &gt; Sum(@♦) + (@A)[♦gain]?"});
+      game_view.status_window.innerHTML = "<em>" + m_minor_from + "(= M Minor From)</em> + F Minor From " + greater_name + " M Major To + F Minor To ?";
       var img = temp.img_drawn;
       var anchor = game_view.anchor_talon;
       var x = Math.floor(anchor.x - img.width / 2);
@@ -3549,8 +3032,8 @@ var game_view = {
       ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
       ctx.fill();
       ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
+      ctx.fillText(m_minor_from, anchor.x, anchor.y);
+      ctx.strokeText(m_minor_from, anchor.x, anchor.y);
       
       temp.prev_past = time;
       return true;
@@ -3559,76 +3042,13 @@ var game_view = {
 
     scene = 2000;
     if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + <em>" + ma_score.wand_upper + "(= (@A)[♣上流])</em> + Max(↓♥(要)) + (↓A)[♥下流] &gt; Sum(@♦) + (@A)[♦喜]?", en: "" + score + "(= $♣) + <em>" + ma_score.wand_upper + "(= (@A)[♣upper])</em> + Max(↓♥(need)) + (↓A)[♥lower] &gt; Sum(@♦) + (@A)[♦gain]?"});
-      var img = make_card_image(ma.card,
-				(ma.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♣" + ma_score.wand_upper + "∽ ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣上流]) + <em>" + max_score + "(= Max(↓♥(要)))</em> + (↓A)[♥下流] &gt; Sum(@♦) + (@A)[♦喜]?", en: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣upper]) + <em>" + max_score + "(= Max(↓♥(need)))</em> + (↓A)[♥lower] &gt; Sum(@♦) + (@A)[♦gain]?"});
-      var anchor = {x: Math.floor((temp.rect_cups_lower.x
-				   + temp.rect_cups_lower.width / 2)),
-		    y: Math.floor((temp.rect_cups_lower.y
-				   + temp.rect_cups_lower.height / 2))};
-      if (max != null) {
-	var img = make_card_image(cur["cups_" + (lower + 1)][max], 0);
-
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      var text = max_score;
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (max == null) {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣上流]) + " + max_score + "(= Max(↓♥(要))) + (↓A)[♥下流] &gt; Sum(@♦) + (@A)[♦喜]?<br/>→ <em>応爻にカップがない。留まる。</em>", en: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣upper]) + " + max_score + "(= Max(↓♥(need))) + (↓A)[♥lower] &gt; Sum(@♦) + (@A)[♦gain]?<br/>→ <em>There is no cup on the lower place.  STAY.</em>"});
-
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-    } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣上流]) + " + max_score + "(= Max(↓♥(要))) + <em>" + ma_l_score.cup_lower + "(= (↓A)[♥下流])</em> &gt; Sum(@♦) + (@A)[♦喜]?", en: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣upper]) + " + max_score + "(= Max(↓♥(need))) + <em>" + ma_l_score.cup_lower + "(= (↓A)[♥lower])</em> &gt; Sum(@♦) + (@A)[♦gain]?"});
-	var img = make_card_image(ma_l.card,
-				  (ma_l.upright)? 0 : Math.PI);
-	var anchor = game_view["anchor_" + (lower + 1)];
+      game_view.status_window.innerHTML = m_minor_from + "(= M Minor From) + <em>" + f_minor_from + "(= F Minor From)</em> " + greater_name + " M Major To + F Minor To ?";
+      if (cur_cards_max != -1) {
+	var anchor = {x: Math.floor((temp.rect_cur_cards.x
+				     + temp.rect_cur_cards.width / 2)),
+		      y: Math.floor((temp.rect_cur_cards.y
+				     + temp.rect_cur_cards.height / 2))};
+	var img = make_card_image(cur[cur_cards_name][cur_cards_max], 0);
 	var x = Math.floor(anchor.x - img.width / 2);
 	var y = Math.floor(anchor.y - img.height / 2);
 	ctx.drawImage(img, x, y);
@@ -3638,50 +3058,10 @@ var game_view = {
 	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
 	ctx.fill();
 	ctx.fillStyle = 'white';
-	var text = read_major_arcana_string(ma_l);
-	if (time - past > 1000) {
-	  text = "♥ ∽" + ma_l_score.cup_lower;
-	}
+	var text = f_minor_from;
 	ctx.fillText(text, anchor.x, anchor.y);
 	ctx.strokeText(text, anchor.x, anchor.y);
-      
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣上流]) + " + max_score + "(= Max(↓♥(要))) + " + ma_l_score.cup_lower + "(= (↓A)[♥下流]) &gt; <em>" + sum_c + "(= Sum(@♦))</em> + (@A)[♦喜]?", en: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣upper]) + " + max_score + "(= Max(↓♥(need))) + " + ma_l_score.cup_lower + "(= (↓A)[♥lower]) &gt; <em>" + sum_c + "(= Sum(@♦))</em> + (@A)[♦gain]?"});
-	var anchor = {x: Math.floor((temp.rect_coins.x
-				     + temp.rect_coins.width / 2)),
-		      y: Math.floor((temp.rect_coins.y
-				     + temp.rect_coins.height / 2))};
-	if (max != null && temp.img_coins) {
-	  var img = temp.img_coins;
-
-	  var x = Math.floor(anchor.x - img.width / 2);
-	  var y = Math.floor(anchor.y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	  ctx.beginPath();
-	  ctx.rect(x, y, img.width, img.height);
-	  ctx.closePath()
-	  ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	  ctx.fill();
-	}
-	ctx.fillStyle = 'white';
-	var text = sum_c;
-	ctx.fillText(text, anchor.x, anchor.y);
-	ctx.strokeText(text, anchor.x, anchor.y);
-      
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣上流]) + " + max_score + "(= Max(↓♥(要))) + " + ma_l_score.cup_lower + "(= (↓A)[♥下流]) &gt; " + sum_c + "(= Sum(@♦)) + <em>" + ma_score.coin_gain + "(= (@A)[♦喜])</em>?", en: "" + score + "(= $♣) + " + ma_score.wand_upper + "(= (@A)[♣upper]) + " + max_score + "(= Max(↓♥(need))) + " + ma_l_score.cup_lower + "(= (↓A)[♥lower]) &gt; " + sum_c + "(= Sum(@♦)) + <em>" + ma_score.coin_gain + "(= (@A)[♦gain])</em>?"});
+      } else {
 	var img = make_card_image(ma.card,
 				  (ma.upright)? 0 : Math.PI);
 	var anchor = game_view["anchor_" + (cur.token + 1)];
@@ -3694,18 +3074,86 @@ var game_view = {
 	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
 	ctx.fill();
 	ctx.fillStyle = 'white';
-	var text = read_major_arcana_string(ma_l);
-	if (time - past > 1000) {
-	  text = "♦ |" + ma_score.coin_gain;
-	}
+	var text = CHAR_COIN + f_minor_from;
 	ctx.fillText(text, anchor.x, anchor.y);
 	ctx.strokeText(text, anchor.x, anchor.y);
-	
-	temp.prev_past = time;
-	return true;
       }
-      past += scene;
+      
+      temp.prev_past = time;
+      return true;
     }
+    past += scene;
+
+    scene = 2000;
+    if (time <= past + scene) {
+      game_view.status_window.innerHTML = m_minor_from + "(= M Minor From) + " + f_minor_from + "(= F Minor From) " + greater_name + " <em>" + m_major_to + "(= M Major To)</em> + F Minor To ?";
+      if (1) {
+	var img = make_card_image(ma_n.card,
+				  (ma_n.upright)? 0 : Math.PI);
+	var anchor = game_view["anchor_" + (next_token + 1)];
+	var x = Math.floor(anchor.x - img.width / 2);
+	var y = Math.floor(anchor.y - img.height / 2);
+	ctx.drawImage(img, x, y);
+	ctx.beginPath();
+	ctx.rect(x, y, img.width, img.height);
+	ctx.closePath()
+	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
+	ctx.fill();
+	ctx.fillStyle = 'white';
+	var text = CHAR_SWORD + m_major_to;
+	ctx.fillText(text, anchor.x, anchor.y);
+	ctx.strokeText(text, anchor.x, anchor.y);
+      }
+      
+      temp.prev_past = time;
+      return true;
+    }
+    past += scene;
+    
+    scene = 2000;
+    if (time <= past + scene) {
+      game_view.status_window.innerHTML = m_minor_from + "(= M Minor From) + " + f_minor_from + "(= F Minor From) " + greater_name + " " + m_major_to + "(= M Major To) + <em>" + f_minor_to + "(= F Minor To)</em> ?";
+
+      if (next_cards_max != -1) {
+	var anchor = {x: Math.floor((temp.rect_next_cards.x
+				     + temp.rect_next_cards.width / 2)),
+		      y: Math.floor((temp.rect_next_cards.y
+				     + temp.rect_next_cards.height / 2))};
+	var img = make_card_image(cur[next_cards_name][next_cards_max], 0);
+	var x = Math.floor(anchor.x - img.width / 2);
+	var y = Math.floor(anchor.y - img.height / 2);
+	ctx.drawImage(img, x, y);
+	ctx.beginPath();
+	ctx.rect(x, y, img.width, img.height);
+	ctx.closePath()
+	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
+	ctx.fill();
+	ctx.fillStyle = 'white';
+	var text = f_minor_to;
+	ctx.fillText(text, anchor.x, anchor.y);
+	ctx.strokeText(text, anchor.x, anchor.y);
+      } else {
+	var img = make_card_image(ma_n.card,
+				  (ma_n.upright)? 0 : Math.PI);
+	var anchor = game_view["anchor_" + (next_token + 1)];
+	var x = Math.floor(anchor.x - img.width / 2);
+	var y = Math.floor(anchor.y - img.height / 2);
+	ctx.drawImage(img, x, y);
+	ctx.beginPath();
+	ctx.rect(x, y, img.width, img.height);
+	ctx.closePath()
+	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
+	ctx.fill();
+	ctx.fillStyle = 'white';
+	var text = CHAR_COIN + f_minor_to;
+	ctx.fillText(text, anchor.x, anchor.y);
+	ctx.strokeText(text, anchor.x, anchor.y);
+      }
+      
+      temp.prev_past = time;
+      return true;
+    }
+    past += scene;
 
     if (temp.prev_past <= past) {
       game_view.clear_screen();
@@ -3714,7 +3162,7 @@ var game_view = {
     if (cur.move_or_stay == "move") {
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.wand_upper + max_score + ma_l_score.cup_lower) + "(= $♣ + (@A)[♣上流] + Max(↓♥(要)) + (↓A)[♥下流]) &gt; " + (sum_c + ma_score.coin_gain) + "(= Sum(@♦) + (@A)[♦喜])?<br/>→ <em>大なり。動く。</em>", en: "" + (score + ma_score.wand_upper + max_score + ma_l_score.cup_lower) + "(= $♣ + (@A)[♣upper] + Max(↓♥(need)) + (↓A)[♥lower]) &gt; " + (sum_c + ma_score.coin_gain) + "(= Sum(@♦) + (@A)[♦gain])?<br/>→ <em>Yes, MOVE.</em>"});
+	game_view.status_window.innerHTML = L({ja:  (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>然り。動く。</em>", en: (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>Yes, MOVE.</em>"});
 	temp.prev_past = time;
 	return true;
       }
@@ -3729,7 +3177,7 @@ var game_view = {
       if (time <= past + scene) {
 	var img = game_view.img_token;
 	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (lower + 1)];
+	var end = game_view["anchor_" + (next_token + 1)];
 
         var r = (time - past) / scene;
 	var x = Math.floor(begin.x + (end.x - begin.x) * r
@@ -3747,7 +3195,7 @@ var game_view = {
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_token.getContext('2d');
 	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (lower + 1)];
+	var anchor = game_view["anchor_" + (next_token + 1)];
 	ctx2.drawImage(img,
 		       Math.floor(anchor.x - img.width / 2),
 		       Math.floor(anchor.y - img.height / 2));
@@ -3756,18 +3204,22 @@ var game_view = {
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_drawn.getContext('2d');
 	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-	temp.img_max = make_card_image(cur["cups_" + (lower + 1)][max], 0);
-	cur["cups_" + (lower + 1)] = game_view.model_next["cups_" + (lower + 1)];
+	temp.img_max = null;
+	if (cur_cards_max != -1) {
+	  temp.img_max = make_card_image(cur[cur_cards_name][cur_cards_max], 0);
+	}
+	cur[cur_cards_name] = game_view.model_next[cur_cards_name];
+
 	game_view.draw_minor();
       }
 
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードと応爻の最大のカップを捨てます。", en: "Discard the drawn wand and the max cup of the lower place."});
+	game_view.status_window.innerHTML = L({ja: "引いたカードと元の場所の最大のカードを捨てます。", en: "Discard the drawn card and the max card of the previous place."});
 	if (temp.img_max) {
 	  var img = temp.img_max;
-	  var begin = {x: temp.rect_cups_lower.x + temp.rect_cups_lower.width / 2,
-		       y: temp.rect_cups_lower.y + temp.rect_cups_lower.height / 2};
+	  var begin = {x: temp.rect_cur_cards.x + temp.rect_cur_cards.width / 2,
+		       y: temp.rect_cur_cards.y + temp.rect_cur_cards.height / 2};
 	  var end = game_view.anchor_discarded 
 	  var r = (time - past) / scene;
 	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
@@ -3792,60 +3244,46 @@ var game_view = {
 	return true;
       }
       past += scene;
-    } else {
-      if (max != null) {
-	scene = 2000;
-	if (time <= past + scene) {
-	  game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.wand_upper + max_score + ma_l_score.cup_lower) + "(= $♣ + (@A)[♣上流] + Max(↓♥(要)) + (↓A)[♥下流]) &gt; " + (sum_c + ma_score.coin_gain) + "(= Sum(@♦) + (@A)[♦喜])?<br/>→ <em>小なり。留まる。</em>", en: "" + (score + ma_score.wand_upper + max_score + ma_l_score.cup_lower) + "(= $♣ + (@A)[♣upper] + Max(↓♥(need)) + (↓A)[♥lower]) &gt; " + (sum_c + ma_score.coin_gain) + "(= Sum(@♦) + (@A)[♦gain])?<br/>→ <em>No, STAY.</em>"});
-	  temp.prev_past = time;
-	  return true;
-	}
-	past += scene;
-      }
-
-      if (temp.prev_past <= past) {
-	if (max_c != null) {
-	  temp.img_max = make_card_image(cur["coins_" + (cur.token + 1)][max_c], 0);
-	  cur["coins_" + (cur.token + 1)] = game_view.model_next["coins_" + (cur.token + 1)];
-	  game_view.draw_minor();
-	}
-      }
-
+    } else if (cur.move_or_stay == "stay") {
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "現在爻の最大のコインを下卦のコインのスペースへ。", en: "Place the drawn wand onto the lower coin space."});
-	if (temp.img_max) {
-	  var img = temp.img_max;
-	  var begin = {x: temp.rect_coins.x + temp.rect_coins.width / 2,
-		       y: temp.rect_coins.y + temp.rect_coins.height / 2};
-	  var end = game_view.anchor_coins_lower;
-	  var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
+	game_view.status_window.innerHTML = L({ja: (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>否。留まる。</em>", en: (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>No, STAY.</em>"});
 	temp.prev_past = time;
 	return true;
       }
-      past += scene;
+      past+= scene;
 
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_drawn.getContext('2d');
 	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-	cur.coins_lower = game_view.model_next.coins_lower;
+	temp.img_max = null;
+	if (next_cards_max != -1) {
+	  temp.img_max = make_card_image(cur[next_cards_name][next_cards_max], 0);
+	}
+	cur[next_cards_name] = game_view.model_next[next_cards_name];
+
 	game_view.draw_minor();
       }
 
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードを捨てます。", en: "Discard the drawn wand."});
+	game_view.status_window.innerHTML = L({ja: "引いたカードと" + dir_name + "の場所の最大のカードを捨てます。", en: "Discard the drawn card and the max card of the " + dir_name + " place."});
+	if (temp.img_max) {
+	  var img = temp.img_max;
+	  var begin = {x: temp.rect_next_cards.x + temp.rect_next_cards.width / 2,
+		       y: temp.rect_next_cards.y + temp.rect_next_cards.height / 2};
+	  var end = game_view.anchor_discarded 
+	  var r = (time - past) / scene;
+	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
+	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
+	  x = Math.floor(x - img.width / 2);
+	  y = Math.floor(y - img.height / 2);
+	  ctx.drawImage(img, x, y);
+	}
 	if (1) {
 	  var img = temp.img_drawn;
 	  var begin = game_view.anchor_talon;
-	  var end = game_view.anchor_discarded;
+	  var end = game_view.anchor_discarded 
 	  var r = (time - past) / scene;
 	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
 	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
@@ -3858,13 +3296,21 @@ var game_view = {
 	return true;
       }
       past += scene;
+    } else /* if (cur.move_or_stay == "choose") */ {
+      scene = 2000;
+      if (time <= past + scene) {
+	game_view.status_window.innerHTML = L({ja: (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>然り。選ぶ。</em>", en: (m_minor_from + f_minor_from) + "(= M Minor From + F Minor From) " + greater_name + " " + (m_major_to + f_minor_to) + "(= M Major To + F Minor To) ?<br/>→ <em>Yes, CHOOSE.</em>"});
+	temp.prev_past = time;
+	return true;
+      }
+      past += scene;
     }
     
     game_view.redraw();
     return false;
   },
 
-  animate_lower_sword : function (time) {
+  animate_determine_move_or_stay2 : function (time) {
     var cur = game_view.model_cur;
     var temp = game_view.animation_temp;
     var ctx = game_view.pane_animation.getContext('2d');
@@ -3877,406 +3323,72 @@ var game_view = {
       temp.img_drawn = make_card_image(cur.drawn, 0);
     }
 
-    scene = 1000;
-    if (time <= past + scene) {
-      var img = temp.img_drawn;
-      var r = Math.floor(((time - past) / scene) * 5);
-      var img2 = make_card_image("B" + r, 0);
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.drawImage(img2, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
+    var next_token = temp.next_token;
+    var direction = temp.dir;
+    var choice_ok = temp.choice_ok;
+    
+    var trigram_name = (cur.token >= 3)?
+	L({ja: "上卦", en: "upper trigram"}) :
+	L({ja: "下卦", en: "lower trigram"});
+    var suit_name = make_suit_name(cur.drawn);
+    var f = {right: L({ja: "右", en: "right"}),
+	     upper: L({ja: "上", en: "upper"}),
+	     lower: L({ja: "下", en: "lower"})};
+    var dir_name = f[direction];
+    var greater_name = "&gt;";
+    if (setting.rule_determinant == "greater_equal") {
+      greater_name = "&gt;=";
     }
 
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "下卦でソードのカードを引きました。<br/>応爻に動くか否かを計算します。", en: "You drew a sword card on lower trigram.<br/>Calculate whether the token can move upper or not."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past && setting.calc_screen) {
-      game_view.draw_screen();
-    }
-
-    var score = calc_card_score(cur.drawn);
-    var upper = cur.token + 3;
-
-    var sum_su = 0;
-    var sum_cl = 0;
-    var sum_cu = 0;
-
-    for (var i = 0, l = cur.swords_upper; i < l.length; i++) {
-      sum_su += calc_card_score(l[i]);
-    }
-    for (var i = 0, l = cur.coins_lower; i < l.length; i++) {
-      sum_cl += calc_card_score(l[i]);
-    }
-    for (var i = 0, l = cur["coins_" + (upper + 1)];
-	 i < l.length; i++) {
-      sum_cu += calc_card_score(l[i]);
-    }
-
-    var max = null;
-    var max_score = 0;
-    for (var i = 0, l = cur["cups_" + (cur.token + 1)];
-	 i < l.length; i++) {
-      var s = calc_card_score(l[i]);
-      if (s > max_score) {
-	max = i;
-	max_score = s;
-      }
-    }
-	
-    var ma_score = read_major_arcana(cur.board[cur.token]);
-    var ma_u_score = read_major_arcana(cur.board[upper]);
-    var ma = cur.board[cur.token];
-    var ma_u = cur.board[upper];
-
-    scene = 1000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "$♠ + (@A)[♠攻] + Sum(↓♦) &gt; (↑A)[♠守] + Sum(↑♦) + Sum(↑♠)?", en: "$♠ + (@A)[♠offence] + Sum(↓♦) &gt; (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠)?"});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    ctx.font = setting.dialog_window_font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-
-    if (temp.prev_past <= past) {
-      if (cur.coins_lower.length > 0) {
-	temp.img_coins_lower = make_cards_image(cur.coins_lower);
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_coins_lower);
-      } else {
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_drawn);
-      }
-      if (cur["coins_" + (upper + 1)].length > 0) {
-	temp.img_coins_upper = make_cards_image(cur["coins_" + (upper + 1)]);
-	temp.rect_coins_upper
-	  = calc_minor_rect("coins_" + (upper + 1), temp.img_coins_upper);
-      } else {
-	temp.rect_coins_upper
-	  = calc_minor_rect("coins_" + (upper + 1), temp.img_drawn);
-      }
-      if (cur.swords_upper.length > 0) {
-	temp.img_swords_upper = make_cards_image(cur.swords_upper);
-	temp.rect_swords_upper
-	  = calc_minor_rect("swords_upper", temp.img_swords_upper);
-      } else {
-	temp.rect_swords_upper
-	  = calc_minor_rect("swords_upper", temp.img_drawn);
-      }
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + score + "(= $♠)</em> + (@A)[♠攻] + Sum(↓♦) &gt; (↑A)[♠守] + Sum(↑♦) + Sum(↑♠)?", en: "<em>" + score + "(= $♠)</em> + (@A)[♠offence] + Sum(↓♦) &gt; (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠)?"});
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♠) + <em>" + ma_score.sword_offence + "(= (@A)[♠攻])</em> + Sum(↓♦) &gt; (↑A)[♠守] + Sum(↑♦) + Sum(↑♠)?", en: "" + score + "(= $♠) + <em>" + ma_score.sword_offence + "(= (@A)[♠offence])</em> + Sum(↓♦) &gt; (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠)?"});
-      var img = make_card_image(ma.card,
-				(ma.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♠" + ma_score.sword_offence + "/ ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠攻]) + <em>" + sum_cl + "(= Sum(↓♦))</em> &gt; (↑A)[♠守] + Sum(↑♦) + Sum(↑♠)?", en: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠offence]) + <em>" + sum_cl + "(= Sum(↓♦))</em> &gt; (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠)?"});
-      var anchor = {x: Math.floor((temp.rect_coins_lower.x
-				   + temp.rect_coins_lower.width / 2)),
-		    y: Math.floor((temp.rect_coins_lower.y
-				   + temp.rect_coins_lower.height / 2))};
-      var img = temp.img_coins_lower;
-      if (img) {
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      ctx.fillText(sum_cl, anchor.x, anchor.y);
-      ctx.strokeText(sum_cl, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠攻]) + " + sum_cl + "(= Sum(↓♦)) &gt; <em>" + ma_u_score.sword_defence + "(= (↑A)[♠守])</em> + Sum(↑♦) + Sum(↑♠)?", en: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠offence]) + " + sum_cl + "(= Sum(↓♦)) &gt; <em>" + ma_u_score.sword_defence + "(= (↑A)[♠defence])</em> + Sum(↑♦) + Sum(↑♠)?"});
-      var img = make_card_image(ma_u.card,
-				(ma_u.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (upper + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma_u);
-      if (time - past > 1000) {
-	text = "♠ /" + ma_u_score.sword_offence;
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠攻]) + " + sum_cl + "(= Sum(↓♦)) &gt; " + ma_u_score.sword_defence + "(= (↑A)[♠守]) + <em>" + sum_cu + "(= Sum(↑♦))</em> + Sum(↑♠)?", en: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠offence]) + " + sum_cl + "(= Sum(↓♦)) &gt; " + ma_u_score.sword_defence + "(= (↑A)[♠defence]) + <em>" + sum_cu + "(= Sum(↑♦))</em> + Sum(↑♠)?"});
-      var anchor = {x: Math.floor((temp.rect_coins_upper.x
-				   + temp.rect_coins_upper.width / 2)),
-		    y: Math.floor((temp.rect_coins_upper.y
-				   + temp.rect_coins_upper.height / 2))};
-      var img = temp.img_coins_upper;
-      if (img) {
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      ctx.fillText(sum_cu, anchor.x, anchor.y);
-      ctx.strokeText(sum_cu, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠攻]) + " + sum_cl + "(= Sum(↓♦)) &gt; " + ma_u_score.sword_defence + "(= (↑A)[♠守]) + " + sum_cu + "(= Sum(↑♦)) + <em>" + sum_su + "(= Sum(↑♠))</em>?", en: "" + score + "(= $♠) + " + ma_score.sword_offence + "(= (@A)[♠offence]) + " + sum_cl + "(= Sum(↓♦)) &gt; " + ma_u_score.sword_defence + "(= (↑A)[♠defence]) + " + sum_cu + "(= Sum(↑♦)) + <em>" + sum_su + "(= Sum(↑♠))</em>?"});
-      var anchor = {x: Math.floor((temp.rect_swords_upper.x
-				   + temp.rect_swords_upper.width / 2)),
-		    y: Math.floor((temp.rect_swords_upper.y
-				   + temp.rect_swords_upper.height / 2))};
-      var img = temp.img_swords_upper;
-      if (img) {
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      ctx.fillText(sum_su, anchor.x, anchor.y);
-      ctx.strokeText(sum_su, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      game_view.clear_screen();
-    }
-
-    if (cur.move_or_stay == "choose") {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.sword_offence + sum_cl) + "(= $♠ + (@A)[♠攻] + Sum(↓♦)) &gt; " + (ma_u_score.sword_defence + sum_cu + sum_su) + "(= (↑A)[♠守] + Sum(↑♦) + Sum(↑♠))?<br/>→ <em>大なり。選ぶ。</em>", en: "" + (score + ma_score.sword_offence + sum_cl) + "(= $♠ + (@A)[♠offence] + Sum(↓♦)) &gt; " + (ma_u_score.sword_defence + sum_cu + sum_su) + "(= (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠))? <br/>→ <em>Yes, CHOOSE.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
+    var cur_cards_name = null;
+    var next_cards_name = null;
+    if (cur.token >= 3) {
+      cur_cards_name = "coins_" + (cur.token + 1);
     } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.sword_offence + sum_cl) + "(= $♠ + (@A)[♠offence] + Sum(↓♦)) &gt; " + (ma_u_score.sword_defence + sum_cu + sum_su) + "(= (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠))?<br/>→ <em>小なり。留まる。</em>", en: "" + (score + ma_score.sword_offence + sum_cl) + "(= $♠ + (@A)[♠offence] + Sum(↓♦)) &gt; " + (ma_u_score.sword_defence + sum_cu + sum_su) + "(= (↑A)[♠defence] + Sum(↑♦) + Sum(↑♠))? <br/>→ <em>No, STAY.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
+      cur_cards_name = "cups_" + (cur.token + 1);
+    }
+    if (next_token >= 3) {
+      next_cards_name = "coins_" + (next_token + 1);
+    } else {
+      next_cards_name = "cups_" + (next_token + 1);
+    }
 
-      var cups = "cups_" + (cur.token + 1);
+    var m_minor_from = calc_card_score(cur.drawn);
+    var f_minor_from = read_major_arcana(cur.board[cur.token]).coin_pain;
+    var m_major_to = read_major_arcana(cur.board[next_token]).sword_offence;
+    var f_minor_to = read_major_arcana(cur.board[next_token]).coin_pain;
 
-      if (temp.prev_past <= past) {
-	var img;
-	if (cur[cups].length > 0) {
-	  img = make_cards_image(cur[cups]);
-	} else {
-	  img = temp.img_drawn;
-	}
-	temp.rect_cups = calc_minor_rect(cups, img);
-
-	if (max != null) {
-	  temp.max_card = cur[cups][max];
-	  temp.img_max = make_card_image(temp.max_card, 0);
-	  cur[cups] = game_view.model_next[cups];
-	  game_view.draw_minor();
+    var cur_cards_max = -1;
+    if (cur[cur_cards_name].length > 0) {
+      var max = null;
+      var max_score = 0;
+      for (var i = 0, l = cur[cur_cards_name]; i < l.length; i++) {
+	var s = calc_card_score(l[i]);
+	if (s > max_score) {
+	  max = i;
+	  max_score = s;
 	}
       }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードと現在爻の最大のカップのカードを捨てます。", en: "Discard the drawn card and the max cup card of the current place."});
-	if (temp.img_max) {
-	  var img = temp.img_max;
-	  var begin = {x: temp.rect_cups.x + temp.rect_cups.width / 2,
-		       y: temp.rect_cups.y + temp.rect_cups.height / 2};
-	  var end = game_view.anchor_discarded;
-
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
+      cur_cards_max = max;
+      f_minor_from = max_score;
+    }
+    var next_cards_max = -1;
+    if (cur[next_cards_name].length > 0) {
+      var max = null;
+      var max_score = 0;
+      for (var i = 0, l = cur[next_cards_name]; i < l.length; i++) {
+	var s = calc_card_score(l[i]);
+	if (s > max_score) {
+	  max = i;
+	  max_score = s;
 	}
-	if (1) {
-	  var img = temp.img_drawn;
-	  var begin = game_view.anchor_talon;
-	  var end = game_view.anchor_discarded;
-
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
-	temp.prev_past = time;
-	return true;
       }
-      past+= scene;
-    }
-    
-    game_view.redraw();
-    return false;
-  },
-
-  animate_lower_sword2 : function (time) {
-    var cur = game_view.model_cur;
-    var temp = game_view.animation_temp;
-    var ctx = game_view.pane_animation.getContext('2d');
-    ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-    game_view.status_window.innerHTML = "";
-    var past = 0;
-    var scene;
-
-    if (temp.prev_past == 0) {
-      temp.img_drawn = make_card_image(cur.drawn, 0);
+      next_cards_max = max;
+      f_minor_to = max_score;
     }
 
-    var score = calc_card_score(cur.drawn);
-    var upper = cur.token + 3;
-
-    var sum_su = 0;
-    var sum_cl = 0;
-    var sum_cu = 0;
-
-    for (var i = 0, l = cur.swords_upper; i < l.length; i++) {
-      sum_su += calc_card_score(l[i]);
-    }
-    for (var i = 0, l = cur.coins_lower; i < l.length; i++) {
-      sum_cl += calc_card_score(l[i]);
-    }
-    for (var i = 0, l = cur["coins_" + (upper + 1)];
-	 i < l.length; i++) {
-      sum_cu += calc_card_score(l[i]);
-    }
-
-    var max = null;
-    var max_score = 0;
-    for (var i = 0, l = cur["cups_" + (cur.token + 1)];
-	 i < l.length; i++) {
-      var s = calc_card_score(l[i]);
-      if (s > max_score) {
-	max = i;
-	max_score = s;
-      }
-    }
-	
-    var ma_score = read_major_arcana(cur.board[cur.token]);
-    var ma_u_score = read_major_arcana(cur.board[upper]);
     var ma = cur.board[cur.token];
-    var ma_u = cur.board[upper];
+    var ma_n = cur.board[next_token];
 
     ctx.font = setting.dialog_window_font;
     ctx.textAlign = 'center';
@@ -4285,37 +3397,21 @@ var game_view = {
     ctx.strokeStyle = 'black';
 
     if (temp.prev_past <= past) {
-      if (cur.coins_lower.length > 0) {
-	temp.img_coins_lower = make_cards_image(cur.coins_lower);
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_coins_lower);
+      if (cur[cur_cards_name].length > 0) {
+	temp.img_cur_cards = make_cards_image(cur[cur_cards_name]);
+	temp.rect_cur_cards
+	  = calc_minor_rect(cur_cards_name, temp.img_cur_cards);
       } else {
-	temp.rect_coins_lower
-	  = calc_minor_rect("coins_lower", temp.img_drawn);
+	temp.rect_cur_cards
+	  = calc_minor_rect(cur_cards_name, temp.img_drawn);
       }
-      if (cur["coins_" + (upper + 1)].length > 0) {
-	temp.img_coins_upper = make_cards_image(cur["coins_" + (upper + 1)]);
-	temp.rect_coins_upper
-	  = calc_minor_rect("coins_" + (upper + 1), temp.img_coins_upper);
+      if (cur[next_cards_name].length > 0) {
+	temp.img_next_cards = make_cards_image(cur[next_cards_name]);
+	temp.rect_next_cards
+	  = calc_minor_rect(next_cards_name, temp.img_next_cards);
       } else {
-	temp.rect_coins_upper
-	  = calc_minor_rect("coins_" + (upper + 1), temp.img_drawn);
-      }
-      if (cur.swords_upper.length > 0) {
-	temp.img_swords_upper = make_cards_image(cur.swords_upper);
-	temp.rect_swords_upper
-	  = calc_minor_rect("swords_upper", temp.img_swords_upper);
-      } else {
-	temp.rect_swords_upper
-	  = calc_minor_rect("swords_upper", temp.img_drawn);
-      }
-      if (cur["cups_" + (cur.token + 1)].length > 0) {
-	temp.img_cups = make_cards_image(cur["cups_" + (cur.token + 1)]);
-	temp.rect_cups
-	  = calc_minor_rect("cups_" + (cur.token + 1), temp.img_cups);
-      } else {
-	temp.rect_cups
-	  = calc_minor_rect("cups" + (cur.token + 1), temp.img_drawn);
+	temp.rect_next_cards
+	  = calc_minor_rect(next_cards_name, temp.img_drawn);
       }
     }
 
@@ -4337,7 +3433,7 @@ var game_view = {
       if (time <= past + scene) {
 	var img = game_view.img_token;
 	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (upper + 1)];
+	var end = game_view["anchor_" + (next_token + 1)];
 
         var r = (time - past) / scene;
 	var x = Math.floor(begin.x + (end.x - begin.x) * r
@@ -4355,80 +3451,56 @@ var game_view = {
       if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_token.getContext('2d');
 	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (upper + 1)];
+	var anchor = game_view["anchor_" + (next_token + 1)];
 	ctx2.drawImage(img,
 		       Math.floor(anchor.x - img.width / 2),
 		       Math.floor(anchor.y - img.height / 2));
       }
 
       if (temp.prev_past <= past) {
-	cur.coins_lower = [];
-	cur.swords_upper = [];
-	game_view.draw_minor();
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "上卦のスペースのソードと下卦のスペースのコインを捨てます。", en: "Discard the swords at the upper space and the coins at the lower space."});
-	if (temp.img_coins_lower) {
-	  var img = temp.img_coins_lower;
-	  var begin = {x: temp.rect_coins_lower.x + temp.rect_coins_lower.width / 2,
-		     y: temp.rect_coins_lower.y + temp.rect_coins_lower.height / 2};
-	  var end = game_view.anchor_discarded;
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-	if (temp.img_swords_upper) {
-	  var img = temp.img_swords_upper;
-	  var begin = {x: temp.rect_swords_upper.x + temp.rect_swords_upper.width / 2,
-		      y: temp.rect_swords_upper.y + temp.rect_swords_upper.height / 2};
-	  var end = game_view.anchor_discarded;
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-
-      if (temp.prev_past <= past) {
 	var ctx2 = game_view.pane_drawn.getContext('2d');
 	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
+	temp.img_max = null;
+	if (cur_cards_max != -1) {
+	  temp.img_max = make_card_image(cur[cur_cards_name][cur_cards_max], 0);
+	}
+	cur[cur_cards_name] = game_view.model_next[cur_cards_name];
+
+	game_view.draw_minor();
       }
 
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたソードは上卦のスペースへ。", en: "Place the drawn sword onto the the upper space."});
-
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = game_view.anchor_swords_upper;
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
+	game_view.status_window.innerHTML = L({ja: "引いたカードと元の場所の最大のカードを捨てます。", en: "Discard the drawn card and the max card of the previous place."});
+	if (temp.img_max) {
+	  var img = temp.img_max;
+	  var begin = {x: temp.rect_cur_cards.x + temp.rect_cur_cards.width / 2,
+		       y: temp.rect_cur_cards.y + temp.rect_cur_cards.height / 2};
+	  var end = game_view.anchor_discarded 
+	  var r = (time - past) / scene;
+	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
+	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
+	  x = Math.floor(x - img.width / 2);
+	  y = Math.floor(y - img.height / 2);
+	  ctx.drawImage(img, x, y);
+	}
+	if (1) {
+	  var img = temp.img_drawn;
+	  var begin = game_view.anchor_talon;
+	  var end = game_view.anchor_discarded 
+	  var r = (time - past) / scene;
+	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
+	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
+	  x = Math.floor(x - img.width / 2);
+	  y = Math.floor(y - img.height / 2);
+	  ctx.drawImage(img, x, y);
+	}
 
 	temp.prev_past = time;
 	return true;
       }
       past += scene;
-
-      if (temp.prev_past <= past) {
-	cur.swords_upper = [cur.drawn];
-	game_view.draw_minor();
-      }
-    } else {
+    } else /* if (cur.move_or_stay == "stay") */ {
       scene = 2000;
       if (time <= past + scene) {
 	game_view.status_window.innerHTML = L({ja: "留まります。", en: "You chose the token to stay."});
@@ -4438,744 +3510,17 @@ var game_view = {
       past += scene;
 
       if (temp.prev_past <= past) {
-	cur["cups_" + (cur.token + 1)] = [];
-	game_view.draw_minor();
-
 	var ctx2 = game_view.pane_drawn.getContext('2d');
 	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
       }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたソードと現在爻のカップをすべて捨てます。", en: "Discard the drawn sword and all cups of the current place."});
-	if (temp.img_cups) {
-	  var img = temp.img_cups;
-	  var begin = {x: temp.rect_cups.x + temp.rect_cups.width / 2,
-		     y: temp.rect_cups.y + temp.rect_cups.height / 2};
-	  var end = game_view.anchor_discarded;
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-	if (1) {
-	  var img = temp.img_drawn;
-	  var begin = game_view.anchor_talon;
-	  var end = game_view.anchor_discarded;
-          var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-    }
-    
-    game_view.redraw();
-    return false;
-  },
-
-  animate_lower_coin : function (time) {
-    var cur = game_view.model_cur;
-    var temp = game_view.animation_temp;
-    var ctx = game_view.pane_animation.getContext('2d');
-    ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-    game_view.status_window.innerHTML = "";
-    var past = 0;
-    var scene;
-
-    if (temp.prev_past == 0) {
-      temp.img_drawn = make_card_image(cur.drawn, 0);
-    }
-
-    scene = 1000;
-    if (time <= past + scene) {
-      var img = temp.img_drawn;
-      var r = Math.floor(((time - past) / scene) * 5);
-      var img2 = make_card_image("B" + r, 0);
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.drawImage(img2, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "下卦でコインのカードを引きました。<br/>順方向の比爻に動くか否かを計算します。", en: "You drew a coin card on lower trigram.<br/>Calculate whether the token must move left or not."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past && setting.calc_screen) {
-      game_view.draw_screen();
-    }
-
-    scene = 1000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "$♦ + (@A)[♦苦] &gt; (←A)[♦喜]?", en: "$♦ + (@A)[♦pain] &gt; (←A)[♦gain]?"});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    var score = calc_card_score(cur.drawn);
-
-    ctx.font = setting.dialog_window_font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + score + "(= $♦)</em> + (@A)[♦苦] &gt; (←A)[♦喜]?", en: "<em>" + score + "(= $♦)</em> + (@A)[♦pain] &gt; (←A)[♦gain]?"});
-
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
       
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    var ma = cur.board[cur.token];
-    var ma_score = read_major_arcana(ma);
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♦) + <em>" + ma_score.coin_pain + "(= (@A)[♦苦])</em> &gt; (←A)[♦喜]?", en: "" + score + "(= $♦) + <em>" + ma_score.coin_pain + "(= (@A)[♦pain])</em> &gt; (←A)[♦gain]?"});
-
-      var img = make_card_image(ma.card,
-				(ma.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♦" + ma_score.coin_pain + " ";
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    var ma_l = cur.board[cur.token + 1];
-    var ma_l_score = read_major_arcana(ma_l);
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(= $♦) + " + ma_score.coin_pain + "(= (@A)[♦苦]) &gt; <em>" + ma_l_score.coin_gain + "(= (←A)[♦喜])</em>?", en: "" + score + "(= $♦) + " + ma_score.coin_pain + "(= (@A)[♦pain]) &gt; <em>" + ma_l_score.coin_gain + "(= (←A)[♦gain])</em>?"});
-
-      var img = make_card_image(ma_l.card,
-				(ma_l.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1 + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma_l);
-      if (time - past > 1000) {
-	text = "♦ |" + ma_l_score.coin_gain;
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      game_view.clear_screen();
-    }
-
-    if (cur.move_or_stay == "move") {
       scene = 2000;
       if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.coin_pain) + "(= $♦ + (@A)[♦苦]) &gt; " + ma_l_score.coin_gain + "(= (←A)[♦喜])? <br/>→ <em>大なり。動く。</em>", en: "" + (score + ma_score.coin_pain) + "(= $♦ + (@A)[♦pain]) &gt; " + ma_l_score.coin_gain + "(= (←A)[♦gain])? <br/>→ <em>Yes, MOVE.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      var left = cur.token + 1;
-
-      scene = 2000;
-      if (time <= past + scene) {
-	var img = game_view.img_token;
-	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (left + 1)];
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r
-			   + setting.card_width * 0.7 * Math.sin(Math.PI * r));
-	var y = Math.floor(begin.y + (end.y - begin.y) * r
-			   - setting.card_height * 0.7 * Math.sin(Math.PI * r));
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (left + 1)];
-	ctx2.drawImage(img,
-		       Math.floor(anchor.x - img.width / 2),
-		       Math.floor(anchor.y - img.height / 2));
-      }
-
-      var upper = cur.token + 3;
-
-      if (! temp.minor_rect) {
-	var l = cur["coins_" + (upper + 1)];
-	var img;
-	if (l && l.length > 0) {
-	  img = make_cards_image(l);
-	} else {
-	  img = temp.img_drawn;
-	}
-	temp.minor_rect = calc_minor_rect("coins_" + (upper + 1), img);
-      }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは応爻へ。", en: "Place the drawn card onto the upper place."});
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = {x: temp.minor_rect.x + temp.minor_rect.width / 2,
-		   y: temp.minor_rect.y + temp.minor_rect.height / 2};
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-    } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.coin_pain) + "(= $♦ + (@A)[♦苦]) &gt; " + ma_l_score.coin_gain + "(= (←A)[♦喜])? <br/>→ <em>小なり。留まる。</em>", en: "" + (score + ma_score.coin_pain) + "(= $♦ + (@A)[♦pain]) &gt; " + ma_l_score.coin_gain + "(= (←A)[♦gain])? <br/>→ <em>No, STAY.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (! temp.minor_rect) {
-	var l = cur["coins_lower"];
-	var img;
-	if (l && l.length > 0) {
-	  img = make_cards_image(l);
-	} else {
-	  img = temp.img_drawn;
-	}
-	temp.minor_rect = calc_minor_rect("coins_lower", img);
-      }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードは下卦のコインのスペースへ。", en: "Place the drawn card onto the lower coin space."});
-	var img = temp.img_drawn;
-	var begin = game_view.anchor_talon;
-	var end = {x: temp.minor_rect.x + temp.minor_rect.width / 2,
-		   y: temp.minor_rect.y + temp.minor_rect.height / 2};
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-    }
-    
-    game_view.redraw();
-    return false;
-  },
-
-  animate_lower_cup : function (time) {
-    var cur = game_view.model_cur;
-    var temp = game_view.animation_temp;
-    var ctx = game_view.pane_animation.getContext('2d');
-    ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-    game_view.status_window.innerHTML = "";
-    var past = 0;
-    var scene;
-
-    if (temp.prev_past == 0) {
-      temp.img_drawn = make_card_image(cur.drawn, 0);
-    }
-
-    scene = 1000;
-    if (time <= past + scene) {
-      var img = temp.img_drawn;
-      var r = Math.floor(((time - past) / scene) * 5);
-      var img2 = make_card_image("B" + r, 0);
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.drawImage(img2, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "下卦でカップのカードを引きました。<br/>トークンは留まります。", en: "You drew a cup card on lower trigram.<br/>The token must stay."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (! temp.rect_cups) {
-      var l = cur["cups_" + (cur.token + 1)];
-      var img;
-      if (l && l.length > 0) {
-	img = make_cards_image(l);
-      } else {
-	img = temp.img_drawn;
-      }
-      temp.rect_cups = calc_minor_rect("cups_" + (cur.token + 1), img);
-    }
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "引いたカードは現在爻のカップとします。", en: "Place the drawn cup card onto the current place."});
-      var img = temp.img_drawn;
-      var begin = game_view.anchor_talon;
-      var end = {x: temp.rect_cups.x + temp.rect_cups.width / 2,
-		 y: temp.rect_cups.y + temp.rect_cups.height / 2};
-
-      var r = (time - past) / scene;
-      var x = Math.floor(begin.x + (end.x - begin.x) * r);
-      var y = Math.floor(begin.y + (end.y - begin.y) * r);
-      x = Math.floor(x - img.width / 2);
-      y = Math.floor(y - img.height / 2);
-      ctx.drawImage(img, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past+= scene;
-    
-    game_view.redraw();
-    return false;
-  },
-
-  animate_lower_wand : function (time) {
-    var cur = game_view.model_cur;
-    var temp = game_view.animation_temp;
-    var ctx = game_view.pane_animation.getContext('2d');
-    ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-    game_view.status_window.innerHTML = "";
-    var past = 0;
-    var scene;
-
-    if (temp.prev_past == 0) {
-      temp.img_drawn = make_card_image(cur.drawn, 0);
-    }
-
-    scene = 1000;
-    if (time <= past + scene) {
-      var img = temp.img_drawn;
-      var r = Math.floor(((time - past) / scene) * 5);
-      var img2 = make_card_image("B" + r, 0);
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.drawImage(img2, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "下卦でワンドのカードを引きました。<br/>逆方向の比爻に動くか否かを計算します。", en: "You drew a wand card on lower trigram.<br/>Calculate whether the token can move right or not."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past && setting.calc_screen) {
-      game_view.draw_screen();
-    }
-
-    var score = calc_card_score(cur.drawn);
-    var right = (cur.token - 1 + 6) % 6;
-
-    var ma_score = read_major_arcana(cur.board[cur.token]);
-    var ma_r_score = read_major_arcana(cur.board[right]);
-
-    var min = null;
-    var min_score = 15;
-    var minimum_score = 15;
-
-    for (var i = 0; i < cur["cups_" + (cur.token + 1)].length; i++) {
-      var sc = calc_card_score(cur["cups_" + (cur.token + 1)][i]);
-      if (score + ma_score.wand_lower > sc + ma_r_score.cup_lower) {
-	if (sc < min_score) {
-	  min = i;
-	  min_score = sc;
-	}
-      }
-      if (sc < minimum_score) {
-	minimum_score = sc;
-      }
-    }
-    if (minimum_score == 15) {
-      minimum_score = 0;
-    }
-    if (min == null) {
-      min_score = minimum_score;
-    }
-
-    var ma = cur.board[cur.token];
-    var ma_r = cur.board[right];
-
-    scene = 1000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "$♣ + (@A)[♣下流] &gt; Suitable(@♥(要)) + (→A)[♥下流]?", en: "$♣ + (@A)[♣lower] &gt; Suitable(@♥(need)) + (→A)[♥lower]?"});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    ctx.font = setting.dialog_window_font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-
-    if (temp.prev_past <= past) {
-      if (cur["cups_" + (cur.token + 1)].length > 0) {
-	temp.img_cups = make_cards_image(cur["cups_" + (cur.token + 1)]);
-	temp.rect_cups
-	  = calc_minor_rect("cups_" + (cur.token + 1), temp.img_cups);
-      } else {
-	temp.rect_cups
-	  = calc_minor_rect("cups_" + (cur.token + 1), temp.img_drawn);
-      }
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "<em>" + score + "(=$♣)</em> + (@A)[♣下流] &gt; Suitable(@♥(要)) + (→A)[♥下流]?", en: "<em>" + score + "(= $♣)</em> + (@A)[♣lower] &gt; Suitable(@♥(need)) + (→A)[♥lower]?"});
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.fillText(score, anchor.x, anchor.y);
-      ctx.strokeText(score, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(=$♣) + <em>" + ma_score.wand_lower + "(= (@A)[♣下流])</em> &gt; Suitable(@♥(要)) + (→A)[♥下流]?", en: "" + score + "(= $♣) + <em>" + ma_score.wand_lower + "(= (@A)[♣lower])</em> &gt; Suitable(@♥(need)) + (→A)[♥lower]?"});
-      var img = make_card_image(ma.card,
-				(ma.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (cur.token + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma);
-      if (time - past > 1000) {
-	text = "♣ ∽" + ma_score.wand_lower;
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(=$♣) + " + ma_score.wand_lower + "(= (@A)[♣下流]) &gt; <em>" + min_score + "(= Suitable(@♥(要)))</em> + (→A)[♥下流]?", en: "" + score + "(= $♣) + " + ma_score.wand_lower + "(= (@A)[♣lower]) &gt; <em>" + min_score + "(= Suitable(@♥(need)))</em> + (→A)[♥lower]?"});
-      var anchor = {x: Math.floor((temp.rect_cups.x
-				   + temp.rect_cups.width / 2)),
-		    y: Math.floor((temp.rect_cups.y
-				   + temp.rect_cups.height / 2))};
-      if (min != null) {
-	var img = make_card_image(cur["cups_" + (cur.token + 1)][min], 0);
-
-	var x = Math.floor(anchor.x - img.width / 2);
-	var y = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	ctx.beginPath();
-	ctx.rect(x, y, img.width, img.height);
-	ctx.closePath()
-	ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-	ctx.fill();
-      }
-      ctx.fillStyle = 'white';
-      var text = min_score;
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "" + score + "(=$♣) + " + ma_score.wand_lower + "(= (@A)[♣下流]) &gt; " + min_score + "(= Suitable(@♥(要))) + <em>" + ma_r_score.cup_lower + "(= (→A)[♥下流])</em>?", en: "" + score + "(= $♣) + " + ma_score.wand_lower + "(= (@A)[♣lower]) &gt; " + min_score + "(= Suitable(@♥(need))) + <em>" + ma_r_score.cup_lower + "(= (→A)[♥lower])</em>?"});
-      var img = make_card_image(ma_r.card,
-				(ma_r.upright)? 0 : Math.PI);
-      var anchor = game_view["anchor_" + (right + 1)];
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx.drawImage(img, x, y);
-      ctx.beginPath();
-      ctx.rect(x, y, img.width, img.height);
-      ctx.closePath()
-      ctx.fillStyle = "rgba(155, 187, 89, 0.9)";
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      var text = read_major_arcana_string(ma_r);
-      if (time - past > 1000) {
-	text = "♥ ∽" + ma_r_score.cup_lower;
-      }
-      ctx.fillText(text, anchor.x, anchor.y);
-      ctx.strokeText(text, anchor.x, anchor.y);
-      
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (temp.prev_past <= past) {
-      game_view.clear_screen();
-    }
-
-    if (cur.move_or_stay == "move") {
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.wand_lower) + "(=$♣ + (@A)[♣下流]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(要)) + (→A)[♥下流])?<br/>→ <em>大なり。動く。</em>", en: "" + (score + ma_score.wand_lower) + "(= $♣ + (@A)[♣lower]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(need)) + (→A)[♥lower])?<br/>→ <em>Yes, MOVE.</em>"});
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	var img = game_view.img_token;
-	var begin = game_view["anchor_" + (cur.token + 1)];
-	var end = game_view["anchor_" + (right + 1)];
-
-        var r = (time - past) / scene;
-	var x = Math.floor(begin.x + (end.x - begin.x) * r
-			   + setting.card_width * 0.7 * Math.sin(Math.PI * r));
-	var y = Math.floor(begin.y + (end.y - begin.y) * r
-			   - setting.card_height * 0.7 * Math.sin(Math.PI * r));
-	x = Math.floor(x - img.width / 2);
-	y = Math.floor(y - img.height / 2);
-	ctx.drawImage(img, x, y);
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_token.getContext('2d');
-	var img = game_view.img_token;
-	var anchor = game_view["anchor_" + (right + 1)];
-	ctx2.drawImage(img,
-		       Math.floor(anchor.x - img.width / 2),
-		       Math.floor(anchor.y - img.height / 2));
-      }
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-	temp.img_min = make_card_image(cur["cups_" + (cur.token + 1)][min], 0);
-	cur["cups_" + (cur.token + 1)] = game_view.model_next["cups_" + (cur.token + 1)];
-	game_view.draw_minor();
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードと条件を満たす最小の現在爻のカップを捨てます。", en: "Discard the drawn wand and the minimum cup of the current place which satisfies the condition."});
-	if (1) {
-	  var img = temp.img_min;
-	  var begin = {x: temp.rect_cups.x + temp.rect_cups.width / 2,
-		       y: temp.rect_cups.y + temp.rect_cups.height / 2};
-	  var end = game_view.anchor_discarded 
-	  var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
+	game_view.status_window.innerHTML = L({ja: "引いたカードを捨てます。", en: "Discard the drawn card."});
 	if (1) {
 	  var img = temp.img_drawn;
 	  var begin = game_view.anchor_talon;
 	  var end = game_view.anchor_discarded 
-	  var r = (time - past) / scene;
-	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
-	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
-	  x = Math.floor(x - img.width / 2);
-	  y = Math.floor(y - img.height / 2);
-	  ctx.drawImage(img, x, y);
-	}
-
-	temp.prev_past = time;
-	return true;
-      }
-      past += scene;
-    } else {
-      scene = 2000;
-      if (time <= past + scene) {
-	if (cur["cups_" + (cur.token + 1)].length > 0) {
-	  game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.wand_lower) + "(=$♣ + (@A)[♣下流]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(要)) + (→A)[♥下流])?<br/>→ <em>小なり。留まる。</em>", en: "" + (score + ma_score.wand_lower) + "(= $♣ + (@A)[♣lower]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(need)) + (→A)[♥lower])?<br/>→ <em>No, STAY.</em>"});
-	} else {
-	  game_view.status_window.innerHTML = L({ja: "" + (score + ma_score.wand_lower) + "(=$♣ + (@A)[♣下流]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(要)) + (→A)[♥下流])?<br/>→ <em>現在爻にカップなし。留まる。</em>", en: "" + (score + ma_score.wand_lower) + "(= $♣ + (@A)[♣lower]) &gt; " + (min_score + ma_r_score.cup_lower) + "(= Suitable(@♥(need)) + (→A)[♥lower])?<br/>→ <em>There is no cup at the current place. STAY.</em>"});
-	}
-	temp.prev_past = time;
-	return true;
-      }
-      past+= scene;
-
-      if (temp.prev_past <= past) {
-	var ctx2 = game_view.pane_drawn.getContext('2d');
-	ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-      }
-
-      scene = 2000;
-      if (time <= past + scene) {
-	game_view.status_window.innerHTML = L({ja: "引いたカードを捨てます。", en: "Discard the drawn wand."});
-	if (1) {
-	  var img = temp.img_drawn;
-	  var begin = game_view.anchor_talon;
-	  var end = game_view.anchor_discarded;
 	  var r = (time - past) / scene;
 	  var x = Math.floor(begin.x + (end.x - begin.x) * r);
 	  var y = Math.floor(begin.y + (end.y - begin.y) * r);
@@ -5313,6 +3658,7 @@ var game_view = {
       ctx.drawImage(img, x, y);
     }
 
+    var upper = cur.token + 3;
     var next = {};
     game_view.model_next = next;
     for (var n in cur) {
@@ -5321,23 +3667,7 @@ var game_view = {
     next.state = "wait_draw_card";
     next.drawn = null;
 
-    if (cur.move_or_stay == "move") {
-      next.discarded = cur.discarded.concat(cur.swords_upper,
-					    cur.coins_lower);
-      next.swords_upper = [cur.drawn];
-      next.coins_lower = [];
-      next.token = cur.token + 3;
-      if (typeof(setting.rule_replacement) != "number"
-	  || setting.rule_replacement != 0) {
-	next.replacements = 0
-	next.replacements_coins_lower = 0
-	next.state = "choose_replacement";
-      }
-    } else {
-      next.discarded = cur.discarded.concat(cur["cups_" + (cur.token + 1)],
-					   [cur.drawn]);
-      next["cups_" + (cur.token + 1)] = [];
-    }
+    process_chose_move_or_stay(cur, next, upper);
 
     var c = {x: 0, y: 0,
 	     width: setting.window_width, height: setting.window_height,
@@ -5349,438 +3679,10 @@ var game_view = {
     game_view.controller_click_array = [c];
     game_view.controller_move_array = [];
 
-    game_view.animation_temp = {prev_past: 0};
-    game_view.lf.set_animation(game_view.animate_lower_sword2);
-  },
-
-  draw_choose_replacement : function () {
-    game_view.clear_animation();
-    game_view.clear_screen();
-    game_view.controller_move_array = [];
-    game_view.controller_click_array = [];
-
-    game_view.draw_minor();
-    game_view.draw_token();
-    game_view.draw_rest_talon();
-
-    var cur = game_view.model_cur;
-    game_view.model_next = null;
-
-    if (1) {
-      var func = function () {
-	var ctx = game_view.pane_control.getContext('2d');
-	ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-	return true;
-      }
-      game_view.controller_move_array
-	.push({x: 0, y: 0, width: setting.window_width,
-	       height: setting.window_height, func: func});
-    }
-
-    var control_draw_card = function (ev, x, y) {
-      var rect = this.rect;
-      var ctx = game_view.pane_control.getContext('2d');
-      ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-      if (x != null && y != null
-	  && x >= rect.x && x < rect.x + rect.width
-	  && y >= rect.y && y < rect.y + rect.height) {
-	var img = game_view.img_hilit_talon;
-	var anchor = game_view.anchor_talon;
-	var x1 = Math.floor(anchor.x - img.width / 2);
-	var y1 = Math.floor(anchor.y - img.height / 2);
-	ctx.drawImage(img, x1, y1);
-      }
-      if (ev == "click") {
-	game_view.drew_card();
-      }
-    }
-
-    if (1) {
-      var img = game_view.img_hilit_talon;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      var c = {x: x, y: y, width: img.width, height: img.height,
-	       func: bind(control_draw_card,
-			  {rect: {x: x, y: y, width: img.width,
-				  height: img.height}})};
-      game_view.controller_click_array.push(c);
-      game_view.controller_move_array.push(c);
-    }
-
-
-    var control_choose_place = function (ev, x, y) {
-      var rect = this.rect;
-      var hilit = this.hilit;
-      var name = this.name;
-      var ctx = game_view.pane_control.getContext('2d');
-      ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-      if (x != null && y != null
-	  && x >= rect.x && x < rect.x + rect.width
-	  && y >= rect.y && y < rect.y + rect.height) {
-	var img = hilit;
-	ctx.drawImage(img, rect.x, rect.y);
-      }
-      if (ev == "click") {
-	game_view.chose_replacement(name);
-      }
-    }
-
-    var replacable = false;
-    for (var i = 0, l = ["swords_upper", "coins_lower",
-			 "coins_6", "coins_5", "coins_4",
-			 "cups_3", "cups_2", "cups_1"];
-	 i < l.length; i++) {
-      if (l[i] == "swords_upper" && setting.rule_cross_border != "all") {
-	continue;
-      }
-      if (cur[l[i]].length == 0) {
-	continue;
-      }
-      replacable = true;
-      var img = make_cards_image(cur[l[i]]);
-      var hilit = make_overlay_image(img);
-      var rect = calc_minor_rect(l[i], img);
-
-      var c = {x: rect.x, y: rect.y, width: rect.width, height: rect.height,
-	       func: bind(control_choose_place,
-			  {rect: rect, hilit: hilit, name: l[i]})};
-      game_view.controller_click_array.push(c);
-      game_view.controller_move_array.push(c);
-    }
-
-    game_view.controller_click_array.reverse();
-    game_view.controller_move_array.reverse();
-
-
-    if (! replacable) {
-      var next = {};
-      game_view.model_next = next;
-      for (var n in cur) {
-	next[n] = cur[n];
-      }
-      next.state = "wait_draw_card";
-      next.drawn = null;
-      game_view.redraw();
-    } else {
-      var repl_char = setting.rule_replacement;
-      if (setting.rule_replacement == "infinity") {
-	repl_char = "∞";
-      }
-      var repl_char2 = setting.rule_replacement_coins_lower;
-      if (setting.rule_replacement_coins_lower == "infinity") {
-	repl_char2 = "∞";
-      }
-      game_view.status_window.innerHTML = L({ja: "戦乱置換: " + cur.replacements + "/" + repl_char + " (うち↓♦へ: " + cur.replacements_coins_lower + "/" + repl_char2 + ")。置換するカードを選んで下さい。置換しない場合は、山からカードを引いてください。", en: "War Replacement: " + cur.replacements + "/" + repl_char + " (to ↓♦: " + cur.replacements_coins_lower + "/" + repl_char2 + "). Please choose a card to replace or draw a card from the talon without replacement."});
-    }
-  },
-
-  chose_replacement : function (name) {
-    game_view.clear_animation();
-
-    var cur = game_view.model_cur;
-    var next = {};
-    game_view.model_next = next;
-    for (var n in cur) {
-      next[n] = cur[n];
-    }
-    next.state = "choose_replacement_card";
-    next.chosen_place = name;
-    next.drawn = null;
-    game_view.redraw();
-  },
-
-  draw_choose_replacement_card : function () {
-    game_view.clear_animation();
-    game_view.controller_move_array = [];
-    game_view.controller_click_array = [];
-
-    game_view.draw_minor();
-    game_view.draw_token();
-    game_view.draw_rest_talon();
-
-    game_view.draw_screen();
-
-    var cur = game_view.model_cur;
-    game_view.model_next = null;
-
-    if (1) {
-      var func = function (ev, x, y) {
-	var ctx = game_view.pane_control.getContext('2d');
-	ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-	if (ev == "click") {
-	  var next = {};
-	  game_view.model_next = next;
-	  for (var n in cur) {
-	    next[n] = cur[n];
-	  }
-	  next.state = "choose_replacement";
-	  next.chosen_place = null;
-	  game_view.redraw();
-	}
-      }
-      game_view.controller_move_array
-	.push({x: 0, y: 0, width: setting.window_width,
-	       height: setting.window_height, func: func});
-      game_view.controller_click_array
-	.push({x: 0, y: 0, width: setting.window_width,
-	       height: setting.window_height, func: func});
-    }
-
-    var cards = cur[cur.chosen_place];
-    var w = 10;
-    var h = 3;
-    if (cards.length / w > h) {
-      h = Math.ceil(cards.length / w);
-    }
-
-    var card_hilit = make_overlay_image(make_card_image("S01", 0));
-
-    var control_choose_card = function (ev, x, y) {
-      var rect = this.rect;
-      var hilit = this.hilit;
-      var card = this.card;
-      var ctx = game_view.pane_control.getContext('2d');
-      ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-      if (x != null && y != null
-	  && x >= rect.x && x < rect.x + rect.width
-	  && y >= rect.y && y < rect.y + rect.height) {
-	var img = hilit;
-	ctx.drawImage(img, rect.x, rect.y);
-      }
-      if (ev == "click") {
-	game_view.chose_replacement_card(card);
-      }
-    }
-
-    var ctx = game_view.pane_animation.getContext('2d');
-    for (var i = 0; i < cards.length; i++) {
-      var img = make_card_image(cards[i], 0);
-      var cx = i % w;
-      var cy = Math.floor(i / w);
-      var x = game_view.window_left + ((game_view.window_right - game_view.window_left - setting.card_width) / (w - 1)) * cx;
-      var y = game_view.window_top + ((game_view.window_bottom - game_view.window_top - setting.card_height) / (h - 1)) * cy;
-      var rect = {x: x, y: y, width: img.width, height: img.height};
-      ctx.drawImage(img, x, y);
-      
-      var c = {x: rect.x, y: rect.y, width: rect.width, height: rect.height,
-	       func: bind(control_choose_card,
-			  {rect: rect, hilit: card_hilit, card: cards[i]})};
-      game_view.controller_click_array.push(c);
-      game_view.controller_move_array.push(c);
-    }
-
-    game_view.controller_click_array.reverse();
-    game_view.controller_move_array.reverse();
-
-    game_view.status_window.innerHTML = L({ja: "置換するカードを選んで下さい。", en: "Please choose a card to replace."});
-  },
-
-  chose_replacement_card : function (card) {
-    game_view.clear_animation();
-    game_view.clear_screen();
-
-    var cur = game_view.model_cur;
-    var next = {};
-    game_view.model_next = next;
-    for (var n in cur) {
-      next[n] = cur[n];
-    }
-    next.state = "choose_replacement_place";
-    next.chosen_card = card;
-    var l = next[next.chosen_place];
-    var r = [];
-    for (i = 0; i < l.length; i++) {
-      if (l[i] != card) {
-	r.push(l[i]);
-      }
-    }
-    next[next.chosen_place] = r;
-    next.drawn = null;
-    game_view.redraw();
-  },
-
-  draw_choose_replacement_place : function () {
-    game_view.clear_animation();
-    game_view.controller_move_array = [];
-    game_view.controller_click_array = [];
-
-    game_view.draw_minor();
-    game_view.draw_token();
-    game_view.draw_rest_talon();
-
-    var cur = game_view.model_cur;
-    game_view.model_next = null;
-
-    var card_img = make_card_image(cur.chosen_card, 0);
-
-    if (1) {
-      var ctx = game_view.pane_control.getContext('2d');
-      var anchor = game_view.anchor_talon;
-      var x1 = Math.floor(anchor.x - (card_img.width / 2));
-      var y1 = Math.floor(anchor.y - (card_img.height / 2));
-      ctx.drawImage(card_img, x1, y1);
-    }
-
-    if (1) {
-      var func = function (ev, x, y) {
-	var card_img = this.card_img;
-	var ctx = game_view.pane_control.getContext('2d');
-	ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-	var x1 = Math.floor(x - (card_img.width / 2));
-	var y1 = Math.floor(y - (card_img.height / 2));
-	if (x1 < 0) {
-	  x1 = 0;
-	}
-	if (x1 + card_img.width > setting.window_width) {
-	  x1 = setting.window_width - card_img.width;
-	}
-	if (y1 < 0) {
-	  y1 = 0;
-	}
-	if (y1 + card_img.height > setting.window_height) {
-	  y1 = setting.window_height - card_img.height;
-	}
-	ctx.drawImage(card_img, x1, y1);
-
-	if (ev == "click") {
-	  var next = {};
-	  game_view.model_next = next;
-	  for (var n in cur) {
-	    next[n] = cur[n];
-	  }
-	  next.state = "choose_replacement";
-	  next[next.chosen_place].push(next.chosen_card);
-	  next.chosen_place = null;
-	  next.chosen_card = null;
-	  game_view.redraw();
-	}
-      }
-      game_view.controller_move_array
-	.push({x: 0, y: 0, width: setting.window_width,
-	       height: setting.window_height,
-	       func: bind(func, {card_img: card_img})});
-      game_view.controller_click_array
-	.push({x: 0, y: 0, width: setting.window_width,
-	       height: setting.window_height,
-	       func: bind(func, {card_img: card_img})});
-    }
-
-
-    var control_choose_place = function (ev, x, y) {
-      var rect = this.rect;
-      var hilit = this.hilit;
-      var card_img = this.card_img
-      var name = this.name;
-      var ctx = game_view.pane_control.getContext('2d');
-      ctx.clearRect(0, 0, setting.window_width, setting.window_height);
-      if (x != null && y != null
-	  && x >= rect.x && x < rect.x + rect.width
-	  && y >= rect.y && y < rect.y + rect.height) {
-	var img = hilit;
-	ctx.drawImage(img, rect.x, rect.y);
-      }
-      var x1 = Math.floor(x - (card_img.width / 2));
-      var y1 = Math.floor(y - (card_img.height / 2));
-      if (x1 < 0) {
-	x1 = 0;
-      }
-      if (x1 + card_img.width > setting.window_width) {
-	x1 = setting.window_width - card_img.width;
-      }
-      if (y1 < 0) {
-	y1 = 0;
-      }
-      if (y1 + card_img.height > setting.window_height) {
-	y1 = setting.window_height - card_img.height;
-      }
-      ctx.drawImage(card_img, x1, y1);
-      if (ev == "click") {
-	game_view.chose_replacement_place(name);
-      }
-    }
-
-    for (var i = 0, l = ["swords_upper", "coins_lower",
-			 "coins_6", "coins_5", "coins_4",
-			 "cups_3", "cups_2", "cups_1", "discarded"];
-	 i < l.length; i++) {
-      if (l[i] == "swords_upper" && setting.rule_cross_border != "all") {
-	continue;
-      }
-      if (setting.rule_cross_border == "none"
-	  && ((cur.chosen_place.match(/^coins_/) && ! l[i].match(/^coins_/))
-	      || (cur.chosen_place.match(/^cups_/) && ! l[i].match(/^cups_/)))) {
-	continue;
-      }
-      if (setting.rule_cross_border == "cups_and_coins"
-	  && (! (l[i].match(/^coins_/) || l[i].match(/^cups_/)))) {
-	continue;
-      }
-      if (l[i] == "coins_lower"
-	  && setting.rule_replacement_coins_lower != "infinity"
-	  && (cur.replacements_coins_lower
-	      >= setting.rule_replacement_coins_lower)) {
-	continue;
-      }
-      var hilit;
-      var rect;
-      if (l[i] == "discarded") {
-	hilit = make_overlay_image(game_view.img_discarded);
-	var anchor = game_view.anchor_discarded;
-	var y = Math.floor(anchor.y - (hilit.height / 2));
-	if ((y + hilit.height) > game_view.window_bottom) {
-	  y = game_view.window_bottom - hilit.height;
-	}
-	var x = Math.floor(anchor.x - (hilit.width / 2))
-	rect = {x: x, y: y, width: hilit.width, height: hilit.height};
-      } else {
-	if (cur[l[i]].length == 0) {
-	  hilit = make_overlay_image(make_cards_image(["S01", "S02", "S03"]));
-	} else {
-	  hilit = make_overlay_image(make_cards_image(cur[l[i]]));
-	}
-	var rect = calc_minor_rect(l[i], hilit);
-      }
-      var c = {x: rect.x, y: rect.y, width: rect.width, height: rect.height,
-	       func: bind(control_choose_place,
-			  {rect: rect, hilit: hilit, name: l[i],
-			   card_img: card_img})};
-      game_view.controller_click_array.push(c);
-      game_view.controller_move_array.push(c);
-    }
-
-    game_view.controller_click_array.reverse();
-    game_view.controller_move_array.reverse();
-
-    game_view.status_window.innerHTML = L({ja: "カードを置いて下さい。", en: "Please place the card."});
-  },
-
-  chose_replacement_place : function (place) {
-    game_view.clear_animation();
-
-    var cur = game_view.model_cur;
-    var next = {};
-    game_view.model_next = next;
-    for (var n in cur) {
-      next[n] = cur[n];
-    }
-    if (place != cur.chosen_place) {
-      next.replacements ++;
-      if (place == "coins_lower") {
-	next.replacements_coins_lower ++;
-      }
-    }
-    if (typeof(setting.rule_replacement) != "number"
-	|| next.replacements < setting.rule_replacement) {
-      next.state = "choose_replacement";
-    } else {
-      next.state = "wait_draw_card";
-    }
-    next[place].push(next.chosen_card);
-    next.chosen_card = null;
-    next.chosen_place = null;
-    next.drawn = null;
-    game_view.redraw();
+    game_view.animation_temp = {prev_past: 0,
+				dir: "upper",
+				next_token: upper, choice_ok: false};
+    game_view.lf.set_animation(game_view.animate_determine_move_or_stay2);
   },
 
   draw_game_end : function () {
@@ -6324,7 +4226,7 @@ function init () {
   var c1 = document.createElement('canvas');
 
   if (! c1 || ! c1.getContext) {
-    game_view.main_window.innerHTML = '<h2>易双六 ～ Youscout Tarot Solitaire</h2>'
+    game_view.main_window.innerHTML = '<h2>略式易双六 ～ Simplified Youscout Tarot Solitaire</h2>'
       + '<p>This page needs Canvas on JavaScript. The author tested this program on Firefox 8, InternetExplorer 9 and Google Chrome 15.</p>';
     return;
   }
@@ -6344,7 +4246,7 @@ window.onload = init;
 <body>
 <div id="main"></div>
 <noscript>
-<h2>易双六 ～ Youscout Tarot Solitaire</h2>
+<h2>略式易双六 ～ Simplified Youscout Tarot Solitaire</h2>
 <p>This page needs JavaScript. Sorry.</p>
 </noscript>
 
