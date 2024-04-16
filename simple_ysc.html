@@ -1,8 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<!-- Time-stamp: "2024-02-29T18:56:23Z" -->
-  <!-- 次は animate_determine_stay から -->
-  
+<!-- Time-stamp: "2024-04-16T04:56:42Z" -->
+
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="Content-Script-Type" content="text/javascript" />
@@ -12,7 +11,7 @@
 <title>略式易双六 Simplified Youscout ～ Tarot Solitaire</title>
 
 <meta name="author" content="JRF" />
-<meta name="version" content="0.34" />
+<meta name="version" content="0.35" />
 <meta name="keywords" content="tarot,タロット,solitaire,ソリティア,易,yi-king,yi-ching,iching" />
 <meta name="description" lang="en" content="A sort of solitaire games playing with tarot cards, inspired by arguments about Yi-Ching divination." />
 <meta name="description" lang="ja" content="タロットカードを使ったソリティアの一種。易経の理論からヒントを得ている。" />
@@ -309,6 +308,7 @@ var setting_default = {
   rule_determinant: "greater",
 
   calc_screen: true,
+  draw_action: "double",
 
   // for system.
   load_status: 'done'
@@ -1109,6 +1109,9 @@ var game_view = {
     case "wait_draw_card":
       game_view.draw_wait_draw_card();
       break;
+    case "stop_after_drawing":
+      game_view.stop_after_drawing();
+      break;
     case "choose_move_or_stay":
       game_view.draw_choose_move_or_stay();
       break;
@@ -1331,6 +1334,10 @@ var game_view = {
 <option value="true">する</option>\
 <option value="false">しない</option>\
 </select></td></tr>\
+<tr><td>引いた後の停止:</td><td><select id="draw_action">\
+<option value="double">する</option>\
+<option value="single">しない</option>\
+</select></td></tr>\
 <tr><td>言語(Language):</td><td><select id="lang">\
 <option value="ja">日本語</option>\
 <option value="en">English</option>\
@@ -1383,6 +1390,10 @@ var game_view = {
 <option value="true">Do it</option>\
 <option value="false">Don\'t do it</option>\
 </select></td></tr>\
+<tr><td>Stop after drawing:</td><td><select id="draw_action">\
+<option value="double">Stop</option>\
+<option value="single">Don\'t stop</option>\
+</select></td></tr>\
 <tr><td>Language:</td><td><select id="lang">\
 <option value="ja">日本語 (Japanese)</option>\
 <option value="en">English</option>\
@@ -1405,6 +1416,7 @@ var game_view = {
 		 "rule_swap_8_11",
 		 "rule_determinant",
 		 "calc_screen",
+		 "draw_action",
 		 "cards",
 		 "lang"];
 
@@ -2442,6 +2454,20 @@ var game_view = {
 	  break;
       }
     }
+
+    if (setting.draw_action == "double") {
+      game_view.model_next_next = game_view.model_next;
+      game_view.next_animation_temp = game_view.animation_temp;
+      game_view.next_animation = animate;
+      var next = {};
+      game_view.model_next = next;
+      for (var n in cur) {
+	next[n] = cur[n];
+      }
+      next.state = "stop_after_drawing";
+      animation_temp = {prev_past: 0};
+      animate = game_view.animate_drawing_card;
+    }
     
     var c = {x: 0, y: 0,
 	     width: setting.window_width, height: setting.window_height,
@@ -2627,7 +2653,7 @@ var game_view = {
     return false;
   },
 
-  animate_determine_stay : function (time) {
+  animate_drawing_card : function (time) {
     var cur = game_view.model_cur;
     var temp = game_view.animation_temp;
     var ctx = game_view.pane_animation.getContext('2d');
@@ -2636,20 +2662,9 @@ var game_view = {
     var past = 0;
     var scene;
 
-    var trigram_name = (cur.token >= 3)?
-	L({ja: "上卦", en: "upper trigram"}) :
-	L({ja: "下卦", en: "lower trigram"});
-    var suit_name = make_suit_name(cur.drawn);
-
-    var cur_cards_name = null;
-    if (cur.token >= 3) {
-      cur_cards_name = "coins_" + (cur.token + 1);
-    } else {
-      cur_cards_name = "cups_" + (cur.token + 1);
-    }
-
     if (temp.prev_past == 0) {
       temp.img_drawn = make_card_image(cur.drawn, 0);
+      game_view.next_animation_temp.img_drawn = temp.img_drawn;
     }
 
     scene = 1000;
@@ -2668,59 +2683,6 @@ var game_view = {
     }
     past += scene;
 
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      var img = temp.img_drawn;
-      var anchor = game_view.anchor_talon;
-      var x = Math.floor(anchor.x - img.width / 2);
-      var y = Math.floor(anchor.y - img.height / 2);
-      ctx2.drawImage(img, x, y);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: trigram_name + "で" + suit_name + "のカードを引きました。<br/>トークンは留まります。", en: "You drew a " + suit_name + " card on " + trigram_name + ".<br/>The token must stay."});
-      temp.prev_past = time;
-      return true;
-    }
-    past += scene;
-
-    if (! temp.minor_rect) {
-      var l = cur[cur_cards_name];
-      var img;
-      if (l && l.length > 0) {
-	img = make_cards_image(l);
-      } else {
-	img = temp.img_drawn;
-      }
-      temp.minor_rect = calc_minor_rect(cur_cards_name, img);
-    }
-
-    if (temp.prev_past <= past) {
-      var ctx2 = game_view.pane_drawn.getContext('2d');
-      ctx2.clearRect(0, 0, setting.window_width, setting.window_height);
-    }
-
-    scene = 2000;
-    if (time <= past + scene) {
-      game_view.status_window.innerHTML = L({ja: "引いたカードは現在爻の" + suit_name + "とします。", en: "Place the drawn " + suit_name + " card onto the current place."});
-      var img = temp.img_drawn;
-      var begin = game_view.anchor_talon;
-      var end = {x: temp.minor_rect.x + temp.minor_rect.width / 2,
-		 y: temp.minor_rect.y + temp.minor_rect.height / 2};
-
-      var r = (time - past) / scene;
-      var x = Math.floor(begin.x + (end.x - begin.x) * r);
-      var y = Math.floor(begin.y + (end.y - begin.y) * r);
-      x = Math.floor(x - img.width / 2);
-      y = Math.floor(y - img.height / 2);
-      ctx.drawImage(img, x, y);
-
-      temp.prev_past = time;
-      return true;
-    }
-    past+= scene;
-    
     game_view.redraw();
     return false;
   },
@@ -3537,6 +3499,82 @@ var game_view = {
     
     game_view.redraw();
     return false;
+  },
+
+  stop_after_drawing : function () {
+    game_view.clear_animation();
+    game_view.controller_move_array = [];
+    game_view.controller_click_array = [];
+
+    game_view.draw_minor();
+    game_view.draw_token();
+    game_view.draw_rest_talon();
+
+    var cur = game_view.model_cur;
+    game_view.model_next = null;
+
+    if (1) {
+      var ctx = game_view.pane_drawn.getContext('2d');
+      var img = make_card_image(cur.drawn, 0);
+      var anchor = game_view.anchor_talon;
+      var x = Math.floor(anchor.x - img.width / 2);
+      var y = Math.floor(anchor.y - img.height / 2);
+      ctx.drawImage(img, x, y);
+    }
+
+    var ctx = game_view.pane_status.getContext('2d');
+    ctx.font = setting.dialog_window_font;
+
+    var control_stop = function (ev, x, y) {
+      if (ev == "click") {
+      }
+    }
+
+    var c = {x: 0, y: 0,
+	     width: setting.window_width, height: setting.window_height,
+	     func: function () {
+	       game_view.act_after_drawing();
+	     }
+	    };
+    game_view.controller_click_array = [c];
+    game_view.controller_move_array = [];
+
+    game_view.status_window.innerHTML = L({ja: "クリックしてください。", en: "Click."});
+  },
+
+  act_after_drawing : function () {
+    game_view.clear_animation();
+    if (1) {
+      var ctx = game_view.pane_status.getContext('2d');
+      ctx.clearRect(0, 0, setting.window_width, setting.window_height);
+    }
+    var cur = game_view.model_cur;
+
+    if (1) {
+      var ctx = game_view.pane_drawn.getContext('2d');
+      var img = make_card_image(cur.drawn, 0);
+      var anchor = game_view.anchor_talon;
+      var x = Math.floor(anchor.x - img.width / 2);
+      var y = Math.floor(anchor.y - img.height / 2);
+      ctx.drawImage(img, x, y);
+    }
+
+    game_view.model_next = game_view.model_next_next;
+    game_view.animation_temp = game_view.next_animation_temp;
+
+    var c = {x: 0, y: 0,
+	     width: setting.window_width, height: setting.window_height,
+	     func: function () {
+	       game_view.lf.reset_animation();
+	       game_view.redraw();
+	     }
+	    };
+    game_view.controller_click_array = [c];
+    game_view.controller_move_array = [];
+
+    game_view.lf.set_animation(game_view.next_animation);
+    game_view.animation_info.start_time -= 1000;
+    game_view.animation_temp.prev_past = 1000;
   },
 
   draw_choose_move_or_stay : function () {
