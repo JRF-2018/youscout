@@ -24,7 +24,7 @@ jobs:
         echo "OK1"
 
     - name: Checkout repository # Checkout the repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Download and Extract Tarot Data # Download and unzip the tarot data
       run: |
@@ -70,7 +70,7 @@ jobs:
         fi
 
     - name: Upload Pages Artifact # Upload the prepared content as a Pages artifact
-      uses: actions/upload-pages-artifact@v4
+      uses: actions/upload-pages-artifact@v3
       with:
         path: './public' # Specify the directory containing the content to upload
 
