@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:  [ "master" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -17,8 +17,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    
+    - name: TEST ECHO
+      run: |
+        echo "OK1"
+
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
 
     - name: Download and Extract Tarot Data
       run: |
