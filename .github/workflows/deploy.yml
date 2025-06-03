@@ -3,16 +3,14 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - master # master ブランチへのプッシュでトリガー
+      - master # main ブランチへのプッシュでトリガー
 
-# GitHub Pages のパーミッション設定
 permissions:
   contents: read
   pages: write
   id-token: write
 
 jobs:
-  # サイトコンテンツを準備し、成果物としてアップロードするジョブ
   build:
     runs-on: ubuntu-latest
     steps:
@@ -23,27 +21,52 @@ jobs:
       run: |
         curl -L https://github.com/JRF-2018/youscout/releases/download/v0.30/jrf_tarot-20140118.zip -o jrf_tarot.zip
         unzip jrf_tarot.zip -d .
+        
+        # デバッグ用: zip展開後のディレクトリ構造を確認
+        echo "--- After unzip ---"
+        ls -F # ファイルとディレクトリを区別して表示
+        ls -F jrf_tarot/ # 展開後のディレクトリの中身を確認 (存在すれば)
+        echo "-------------------"
 
     - name: Prepare Pages Content
       run: |
         mkdir public
-        cp *.html public/
-        cp *.txt public/
-        cp -r simplest public/
-        cp -r jrf_tarot public/
+        
+        # ファイルやディレクトリが見つからなくてもエラーにしない (デバッグのため)
+        cp *.html public/ || true
+        cp *.txt public/ || true
+        cp -r simplest public/ || true
+        
+        # ここは jrf_tarot.zip を展開した結果のディレクトリ名に合わせる
+        # 例えば、zipを展開すると jrf_tarot-20140118/ というディレクトリができるなら、
+        # cp -r jrf_tarot-20140118 public/
+        # もし直接ファイルが展開される（ディレクトリが作られない）なら、
+        # cp jrf_tarot-20140118/* public/
+        # のように調整が必要かもしれません。まずは ls -F で確認を。
+        cp -r jrf_tarot public/ || true 
+        
+        # デバッグ用: public ディレクトリの中身を確認
+        echo "--- Contents of public directory for upload ---"
+        ls -R public/
+        echo "-----------------------------------------------"
+        
+        # public ディレクトリが空でないか、確認
+        if [ -z "$(ls -A public/)" ]; then
+          echo "Error: public directory is empty!"
+          exit 1 # 空の場合は強制的にエラー終了
+        fi
 
     - name: Upload Pages Artifact
       uses: actions/upload-pages-artifact@v4
       with:
-        path: './public' # ここで、準備したディレクトリを指定する
+        path: './public'
 
-  # 成果物を GitHub Pages にデプロイするジョブ
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build # build ジョブが完了してから実行される
+    needs: build
     steps:
     - name: Deploy to GitHub Pages
       id: deployment
