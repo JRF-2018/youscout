@@ -19,10 +19,6 @@ jobs:
     runs-on: ubuntu-latest # Use the latest Ubuntu runner
     steps:
     
-    - name: TEST ECHO # A simple test step to check if the workflow starts
-      run: |
-        echo "OK1"
-
     - name: Checkout repository # Checkout the repository code
       uses: actions/checkout@v3
 
