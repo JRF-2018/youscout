@@ -29,7 +29,7 @@ jobs:
     - name: Download and Extract Tarot Data # Download and unzip the tarot data
       run: |
         curl -L https://github.com/JRF-2018/youscout/releases/download/v0.30/jrf_tarot-20140118.zip -o jrf_tarot.zip
-        unzip jrf_tarot.zip -d .
+        unzip -o jrf_tarot.zip -d .
         
         # --- Debugging logs ---
         echo "--- After unzip ---"
