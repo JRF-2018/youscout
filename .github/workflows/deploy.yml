@@ -30,7 +30,7 @@ jobs:
         curl -L https://github.com/JRF-2018/youscout/releases/download/v0.30/jrf_tarot-20140118.zip -o jrf_tarot.zip
         
         # zip ファイルの展開
-        unzip jrf_tarot.zip -d . # 現在のディレクトリに展開
+        unzip jrf_tarot.zip # 現在のディレクトリに展開
         # もし特定のディレクトリ（例: tarot_data/）に展開したい場合は以下のように変更
         # mkdir tarot_data
         # unzip jrf_tarot.zip -d tarot_data/
