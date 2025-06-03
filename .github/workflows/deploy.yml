@@ -1,77 +1,56 @@
-name: Deploy to GitHub Pages
+name: Simple Deploy HTML to GitHub Pages
 
 on:
   push:
     branches:
-      - master # もしデフォルトブランチが 'main' なら 'main' に戻してください
+      - master # Adjust this to your repository's default branch (main or master)
 
+# Permissions required for GitHub Pages deployment
 permissions:
   contents: read
   pages: write
   id-token: write
 
 jobs:
+  # Job to prepare site content and upload it as an artifact
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Download and Extract Tarot Data
-      run: |
-        curl -L https://github.com/JRF-2018/youscout/releases/download/v0.30/jrf_tarot-20140118.zip -o jrf_tarot.zip
-        unzip jrf_tarot.zip -d .
-        
-        # --- デバッグ用ログ ---
-        echo "--- After unzip ---"
-        ls -F # ファイルとディレクトリを区別して表示
-        ls -F jrf_tarot/ || true # 展開後のディレクトリの中身を確認 (存在しない場合もエラーにしない)
-        echo "-------------------"
-
-    - name: Prepare Pages Content
+    - name: Prepare Pages Content (only HTML)
       run: |
         mkdir public
-        
-        # ファイルやディレクトリが見つからなくてもエラーにしない (デバッグのため)
-        # cpコマンドは、対象がないとエラーになるため、|| true を付加してエラーを抑制
+        # Copy all HTML files from the repository root to the public directory
+        # '|| true' ensures the command doesn't fail if no HTML files are found
         cp *.html public/ || true 
-        cp *.txt public/ || true
-        cp -r simplest public/ || true
-        
-        # jrf_tarot-20140118 ディレクトリが存在するか確認し、存在すればコピー
-        # ZIPの中身が 'jrf_tarot/' というディレクトリであれば、以下でOK
-        if [ -d "jrf_tarot" ]; then
-          cp -r jrf_tarot public/
-        else
-          echo "Warning: jrf_tarot directory not found after unzip. Check zip content."
-          # ZIPの中身が 'jrf_tarot-20140118/' というディレクトリであれば、上の行を jrf_tarot-20140118 に戻す
-          # もし直接ファイルが展開される（ディレクトリが作られない）なら、
-          # cp jrf_tarot-20140118/* public/ || true # こちらを試す可能性
-        fi
-        
-        # --- デバッグ用ログ ---
+
+        # --- Debugging logs ---
         echo "--- Contents of public directory for upload ---"
         ls -R public/
         echo "-----------------------------------------------"
         
-        # public ディレクトリが空でないか、確認
+        # Check if the public directory is empty
         if [ -z "$(ls -A public/)" ]; then
-          echo "Error: public directory is empty! No content to upload."
-          exit 1 # 空の場合は強制的にエラー終了
+          echo "Error: public directory is empty! No HTML content to upload."
+          exit 1
         fi
 
     - name: Upload Pages Artifact
       uses: actions/upload-pages-artifact@v4
       with:
-        path: './public' # ここで、準備したディレクトリを指定する
+        path: './public' # Specify the prepared public directory
 
+  # Job to deploy the artifact to GitHub Pages
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: build # This job runs only after the 'build' job completes successfully
     steps:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
+
