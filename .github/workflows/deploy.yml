@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - master # もしデフォルトブランチが 'main' なら 'main' に戻してください
+  pull_request:
+    branches: [ "master" ]
+
+workflow_dispatch:
 
 permissions:
   contents: read
