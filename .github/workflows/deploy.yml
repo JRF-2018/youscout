@@ -2,84 +2,87 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ] # Trigger on push to the master branch
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master" ] # Trigger on pull request to the master branch
 
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering of the workflow from the GitHub UI
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read # Read repository contents
+  pages: write   # Write to GitHub Pages
+  id-token: write # Write ID tokens for OIDC authentication
 
 jobs:
+  # Job to build and prepare the site content, then upload it as an artifact
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
     steps:
     
-    - name: TEST ECHO
+    - name: TEST ECHO # A simple test step to check if the workflow starts
       run: |
         echo "OK1"
 
-    - name: Checkout repository
+    - name: Checkout repository # Checkout the repository code
       uses: actions/checkout@v4
 
-    - name: Download and Extract Tarot Data
+    - name: Download and Extract Tarot Data # Download and unzip the tarot data
       run: |
         curl -L https://github.com/JRF-2018/youscout/releases/download/v0.30/jrf_tarot-20140118.zip -o jrf_tarot.zip
         unzip jrf_tarot.zip -d .
         
-        # --- デバッグ用ログ ---
+        # --- Debugging logs ---
         echo "--- After unzip ---"
-        ls -F # ファイルとディレクトリを区別して表示
-        ls -F jrf_tarot/ || true # 展開後のディレクトリの中身を確認 (存在しない場合もエラーにしない)
+        ls -F # List files and directories (F for type indicator)
+        ls -F jrf_tarot/ || true # Check contents of the unzipped directory (continue if not found)
         echo "-------------------"
 
-    - name: Prepare Pages Content
+    - name: Prepare Pages Content # Prepare the content to be deployed to GitHub Pages
       run: |
-        mkdir public
+        mkdir public # Create a directory to hold all public content
         
-        # ファイルやディレクトリが見つからなくてもエラーにしない (デバッグのため)
-        # cpコマンドは、対象がないとエラーになるため、|| true を付加してエラーを抑制
+        # Copy files/directories to the public directory.
+        # '|| true' ensures the command doesn't fail if files/directories are not found, for debugging.
         cp *.html public/ || true 
         cp *.txt public/ || true
         cp -r simplest public/ || true
         
-        # jrf_tarot-20140118 ディレクトリが存在するか確認し、存在すればコピー
-        # ZIPの中身が 'jrf_tarot/' というディレクトリであれば、以下でOK
+        # Check if the 'jrf_tarot' directory exists after unzip, then copy it.
+        # If the zip content extracts directly as files without a top-level directory,
+        # you might need to adjust the 'cp' command (e.g., 'cp jrf_tarot-20140118/* public/').
         if [ -d "jrf_tarot" ]; then
           cp -r jrf_tarot public/
         else
           echo "Warning: jrf_tarot directory not found after unzip. Check zip content."
-          # ZIPの中身が 'jrf_tarot-20140118/' というディレクトリであれば、上の行を jrf_tarot-20140118 に戻す
-          # もし直接ファイルが展開される（ディレクトリが作られない）なら、
-          # cp jrf_tarot-20140118/* public/ || true # こちらを試す可能性
+          # If the zip content extracts as 'jrf_tarot-20140118/', revert to 'cp -r jrf_tarot-20140118 public/'.
+          # If files are extracted directly (no directory), consider 'cp jrf_tarot-20140118/* public/ || true'.
         fi
         
-        # --- デバッグ用ログ ---
+        # --- Debugging logs ---
         echo "--- Contents of public directory for upload ---"
-        ls -R public/
+        ls -R public/ # List contents of the public directory recursively
         echo "-----------------------------------------------"
         
-        # public ディレクトリが空でないか、確認
+        # Check if the public directory is empty. If so, exit with an error.
         if [ -z "$(ls -A public/)" ]; then
           echo "Error: public directory is empty! No content to upload."
-          exit 1 # 空の場合は強制的にエラー終了
+          exit 1 
         fi
 
-    - name: Upload Pages Artifact
+    - name: Upload Pages Artifact # Upload the prepared content as a Pages artifact
       uses: actions/upload-pages-artifact@v4
       with:
-        path: './public' # ここで、準備したディレクトリを指定する
+        path: './public' # Specify the directory containing the content to upload
 
+  # Job to deploy the uploaded artifact to GitHub Pages
   deploy:
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
+      name: github-pages # Define the deployment environment
+      url: ${{ steps.deployment.outputs.page_url }} # Get the deployed URL from the deployment step
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner for deployment
+    needs: build # This job depends on the 'build' job completing successfully
     steps:
-    - name: Deploy to GitHub Pages
+    - name: Deploy to GitHub Pages # Deploy the artifact to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
+
